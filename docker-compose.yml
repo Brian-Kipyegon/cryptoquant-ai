@@ -1,0 +1,18 @@
+services:
+  core:
+    build: .
+    image: cryptoquant-ai-core
+    ports:
+      - "3000:3000"
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      DATA_DIR: /app/data
+    volumes:
+      # SQLite database, JSON stores and the encrypted credential vault
+      - core-data:/app/data
+    restart: unless-stopped
+
+volumes:
+  core-data:

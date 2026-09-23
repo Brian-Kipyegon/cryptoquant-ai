@@ -56,6 +56,18 @@ npm start
 
 This runs `npm run build` followed by `npm run start:prod`. Set `PORT` to listen on a port other than 3000, and `DATA_DIR` to keep runtime data somewhere other than `./data`.
 
+### Docker
+
+```bash
+npm run setup                 # or: cp .env.example .env
+# edit .env
+docker compose up -d --build
+```
+
+The app is served on `http://localhost:3000`. Runtime data (SQLite database, JSON stores and the encrypted credential vault) lives in the `core-data` Docker volume, so it survives container restarts and rebuilds. The container runs as the unprivileged `node` user and exposes a health check on `/api/auth/session`.
+
+To pull the Node.js base image from a registry mirror, pass `NODE_IMAGE`, for example `docker compose build --build-arg NODE_IMAGE=mirror.gcr.io/library/node:24-slim`.
+
 Run validation:
 
 ```bash
