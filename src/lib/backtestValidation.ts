@@ -140,13 +140,13 @@ export function createBacktestDiagnostics(args: {
 export function categorizeNoEntryReason(strategy: string, reasoning: string) {
   const text = `${strategy || ""} ${reasoning || ""}`;
   if (/RISK_OFF|Risk Kill Switch/i.test(text)) return "risk_off_blocked";
-  if (/Macro Gate|宏观|瀹忚/i.test(text)) return "macro_gate_blocked";
-  if (/regime=.*RANGE|等待明确|regime/i.test(text) && /Trend Breakout|trend-breakout/i.test(text)) return "trend_regime_not_ready";
-  if (/未共振|breakout|momentum|MACD|Trend Breakout/i.test(text)) return "trend_filters_not_aligned";
-  if (/趋势环境|Mean Reversion/i.test(text) && /regime/i.test(text)) return "mean_reversion_wrong_regime";
-  if (/高周期|higher timeframe/i.test(text)) return "higher_timeframe_trend_blocked";
-  if (/波动率|volatility/i.test(text)) return "volatility_expansion_blocked";
-  if (/布林|RSI|Mean Reversion/i.test(text)) return "mean_reversion_not_extreme";
+  if (/Macro Gate|Macro risk/i.test(text)) return "macro_gate_blocked";
+  if (/regime=.*RANGE|clear direction|regime/i.test(text) && /Trend Breakout|trend-breakout/i.test(text)) return "trend_regime_not_ready";
+  if (/not aligned|breakout|momentum|MACD|Trend Breakout/i.test(text)) return "trend_filters_not_aligned";
+  if (/trending market|Mean Reversion/i.test(text) && /regime/i.test(text)) return "mean_reversion_wrong_regime";
+  if (/higher timeframe/i.test(text)) return "higher_timeframe_trend_blocked";
+  if (/volatility/i.test(text)) return "volatility_expansion_blocked";
+  if (/Bollinger|RSI|Mean Reversion/i.test(text)) return "mean_reversion_not_extreme";
   return "other_hold";
 }
 

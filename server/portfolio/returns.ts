@@ -25,8 +25,8 @@ export const portfolioReturnCache = new Map<string, PortfolioReturnCacheEntry>()
 
 export function portfolioCredentialError(mode: PortfolioReturnMode) {
   return mode === "demo"
-    ? "OKX 模拟盘凭据缺失，无法读取真实账单收益。请先在设置中配置 OKX 模拟盘 API。"
-    : "OKX 实盘凭据缺失，无法读取真实账单收益。请先在设置中配置 OKX 实盘 API。";
+    ? "OKX demo credentials are missing, so real bill returns cannot be read. Configure the OKX demo API in Settings first."
+    : "OKX live credentials are missing, so real bill returns cannot be read. Configure the OKX live API in Settings first.";
 }
 
 export function normalizeOkxPortfolioBill(row: any, mode: PortfolioReturnMode): PortfolioReturnBillInput {
@@ -86,7 +86,7 @@ export async function fetchPortfolioExchangeReturns(mode: PortfolioReturnMode, l
 }
 
 export function formatPortfolioReturnSourceError(error: any) {
-  return error?.message || String(error || "OKX 账单读取失败");
+  return error?.message || String(error || "Failed to read OKX bills");
 }
 
 export function getFreshPortfolioReturnCachedResponse(requestKey: string, now: number) {
@@ -101,7 +101,7 @@ export function getFreshPortfolioReturnCachedResponse(requestKey: string, now: n
 export function getStalePortfolioReturnCachedResponse(requestKey: string, error: any, now: number) {
   const cached = portfolioReturnCache.get(requestKey);
   if (!isUsableStalePortfolioReturnCache(cached, now, PORTFOLIO_RETURNS_STALE_MAX_AGE_MS)) return null;
-  const message = `OKX 账单刷新失败，当前显示上次成功快照：${formatPortfolioReturnSourceError(error)}`;
+  const message = `OKX bill refresh failed; showing the last successful snapshot: ${formatPortfolioReturnSourceError(error)}`;
   return withPortfolioReturnSourceStatus(
     cached!.analytics,
     createPortfolioReturnStaleStatus(cached!.analytics, message, now)

@@ -23,7 +23,7 @@ export function registerNotifyRoutes(app: express.Express) {
       await transporter.sendMail({
         from: process.env.SMTP_USER,
         to: process.env.SMTP_TO || process.env.SMTP_USER,
-        subject: subject || "量化交易通知",
+        subject: subject || "CryptoQuant AI notification",
         text: message,
       });
       res.json({ success: true });

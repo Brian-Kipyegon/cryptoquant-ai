@@ -80,7 +80,7 @@ export function registerRecordRoutes(app: express.Express) {
           const exchangeReturns = await withTimeout(
             fetchPortfolioExchangeReturns(mode, limit),
             PORTFOLIO_RETURNS_TIMEOUT_MS,
-            `OKX ${mode === "demo" ? "模拟盘" : "实盘"}账单读取超时`
+            `OKX ${mode === "demo" ? "demo" : "live"} bill request timed out`
           );
           const fetchedAt = Date.now();
           const analytics = buildPortfolioReturnAnalytics({

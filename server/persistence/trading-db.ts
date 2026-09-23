@@ -737,7 +737,7 @@ export async function maintainOpenShadowOrders(config: AutoTradingConfig) {
     try {
       marketBundle = await fetchPublicMarketBundleWithAutoRetry(symbol, timeframe, 180);
     } catch (error: any) {
-      pushAutoTradingLog(`褰卞瓙鎸佷粨缁存姢澶辫触 ${symbol}: ${error?.message || String(error)}`);
+      pushAutoTradingLog(`Shadow position maintenance failed ${symbol}: ${error?.message || String(error)}`);
       continue;
     }
 
@@ -797,7 +797,7 @@ export async function maintainOpenShadowOrders(config: AutoTradingConfig) {
       const exitHit = determineShadowExitFromOhlcv(order, marketBundle.ohlcv);
       if (exitHit) {
         const closed = closeShadowOrderPosition(order, exitHit);
-        pushAutoTradingLog(`褰卞瓙鎸佷粨宸插钩浠?${closed.symbol} ${closed.strategy_id || "--"} ${closed.exit_reason || "take_profit"} ${Number(closed.realized_pnl || 0).toFixed(2)} USDT`);
+        pushAutoTradingLog(`Shadow position closed ${closed.symbol} ${closed.strategy_id || "--"} ${closed.exit_reason || "take_profit"} ${Number(closed.realized_pnl || 0).toFixed(2)} USDT`);
         continue;
       }
 
@@ -809,7 +809,7 @@ export async function maintainOpenShadowOrders(config: AutoTradingConfig) {
           bar: lastBar,
           closedAt: evaluatedAt,
         });
-        pushAutoTradingLog(`褰卞瓙鎸佷粨鍙嶅悜骞充粨 ${closed.symbol} ${closed.strategy_id || "--"} ${order.side} -> ${actionable.analysis.signal}`);
+        pushAutoTradingLog(`Shadow position closed on reverse signal ${closed.symbol} ${closed.strategy_id || "--"} ${order.side} -> ${actionable.analysis.signal}`);
         continue;
       }
 
@@ -867,7 +867,7 @@ export async function hydrateLegacyShadowOrders() {
         timeframe,
         estimatedTimeframe: timeframe,
         isEstimated: 1,
-        estimationNote: "缂哄皯 entry/tp/sl 绛夊叧閿瓧娈碉紝鏃犳硶鍥炴斁浼扮畻",
+        estimationNote: "Missing entry/tp/sl or other key fields; cannot replay an estimate",
       });
       continue;
     }
@@ -896,7 +896,7 @@ export async function hydrateLegacyShadowOrders() {
           ...exitHit,
           isEstimated: true,
           estimatedTimeframe: timeframe,
-          estimationNote: "鍘嗗彶褰卞瓙鍗曟寜褰撳墠绯荤粺鍛ㄦ湡鍥炴斁浼扮畻",
+          estimationNote: "Historical shadow order estimated by replaying on the current system timeframe",
         });
         continue;
       }
@@ -912,7 +912,7 @@ export async function hydrateLegacyShadowOrders() {
         lastEvaluatedAt: Number(lastBar?.[0] || Date.now()),
         isEstimated: 1,
         estimatedTimeframe: timeframe,
-        estimationNote: "鍘嗗彶褰卞瓙鍗曟寜褰撳墠绯荤粺鍛ㄦ湡鍥炴斁浼扮畻",
+        estimationNote: "Historical shadow order estimated by replaying on the current system timeframe",
         signal: signal,
       });
     } catch (error: any) {
@@ -922,7 +922,7 @@ export async function hydrateLegacyShadowOrders() {
         timeframe,
         estimatedTimeframe: timeframe,
         isEstimated: 1,
-        estimationNote: `鍘嗗彶浼扮畻澶辫触: ${error?.message || String(error)}`,
+        estimationNote: `Historical estimate failed: ${error?.message || String(error)}`,
       });
     }
   }

@@ -3,7 +3,7 @@ import { ceilToStep, normalizeOkxOrderStatus, okxBar, toCcxtLikeSwapSymbol, toCc
 import { calculateShadowPnl, timeframeToMs } from "../persistence/trading-db";
 import { floorToStep, normalizeNumber } from "../utils";
 import { nextAutoTradingDelay } from "../trading/auto-trading-cycle";
-import { AUTO_TRADING_MAX_DELAY_MS, AUTO_TRADING_MIN_DELAY_MS } from "../stores/app-store";
+import { AUTO_TRADING_MAX_DELAY_MS, AUTO_TRADING_MIN_DELAY_MS, sanitizeAutoTradingLogEntry } from "../stores/app-store";
 
 describe("symbol conversion", () => {
   it("converts display symbols to CCXT swap symbols", () => {
@@ -72,5 +72,26 @@ describe("shadow trading", () => {
     expect(nextAutoTradingDelay(1)).toBe(5 * 60_000);
     expect(nextAutoTradingDelay(100)).toBe(AUTO_TRADING_MAX_DELAY_MS);
     expect(nextAutoTradingDelay(0, AUTO_TRADING_MIN_DELAY_MS)).toBe(5 * 60_000);
+  });
+});
+
+describe("auto-trading log sanitizer", () => {
+  it("passes English log lines through unchanged", () => {
+    expect(sanitizeAutoTradingLogEntry("[12:00:00] Scan started (manual, ALLOW)")).toBe("[12:00:00] Scan started (manual, ALLOW)");
+    expect(sanitizeAutoTradingLogEntry(42)).toBe("");
+  });
+
+  it("translates legacy Chinese entries", () => {
+    expect(sanitizeAutoTradingLogEntry("[12:00:00] 自动交易引擎已停止")).toBe("[12:00:00] Auto-trading engine stopped");
+    expect(sanitizeAutoTradingLogEntry("[12:00:00] 开始扫描 (定时, ALLOW)")).toBe("[12:00:00] Scan started (scheduled, ALLOW)");
+  });
+
+  it("translates legacy mis-encoded entries", () => {
+    expect(sanitizeAutoTradingLogEntry("[12:00:00] \u9477\ue044\u59e9\u6d5c\u3086\u69d7\u5bee\u66df\u6438\u5bb8\u63d2\u60ce\u9354?(DEMO)"))
+      .toBe("[12:00:00] Auto-trading engine started (DEMO)");
+    expect(sanitizeAutoTradingLogEntry("[12:00:00] \u5bee\u20ac\u6fee\u5b2b\u58c2\u93bb?(\u93b5\u5b2a\u59e9, ALLOW)"))
+      .toBe("[12:00:00] Scan started (manual, ALLOW)");
+    expect(sanitizeAutoTradingLogEntry("[12:00:00] \u8930\u535e\u74d9\u93b8\u4f77\u7ca8\u5bb8\u63d2\u5f3d\u93b5?BTC/USDT trend\u951b\u5c7c\u7b02\u7ed7\u65c2\u6ce9\u6d5c?1.00 USDT"))
+      .toBe("[12:00:00] Shadow position reversed BTC/USDT trend, previous PnL 1.00 USDT");
   });
 });

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildHigherTimeframeTrend,
   calculateRiskSizedQuantity,
+  categorizeNoEntryReason,
   classifyValidationStatus,
   createBacktestDiagnostics,
   normalizeMinTrainTrades,
@@ -75,5 +76,19 @@ describe("backtestValidation helpers", () => {
   it("detects obvious high-timeframe trends for mean-reversion filtering", () => {
     expect(buildHigherTimeframeTrend(makeTrendOhlcv(600, 100, 0.1), "1h").direction).toBe("up");
     expect(buildHigherTimeframeTrend(makeTrendOhlcv(600, 200, -0.1), "1h").direction).toBe("down");
+  });
+
+  it.each([
+    ["trend-breakout", "[Risk Kill Switch] RISK_OFF environment; the trend strategy may not open new positions.", "risk_off_blocked"],
+    ["trend-breakout", "[Macro Gate] Macro risk light is cautious; new trend longs are blocked.", "macro_gate_blocked"],
+    ["trend-breakout", "[Trend Breakout] Current regime=RANGE; the trend strategy is waiting for a clear direction.", "trend_regime_not_ready"],
+    ["trend-breakout", "[Trend Breakout] Current volatility does not cover round-trip fees; waiting for a stronger breakout.", "trend_filters_not_aligned"],
+    ["mean-reversion", "[Mean Reversion] Current regime=TREND_UP; mean reversion entries are blocked in a trending market.", "mean_reversion_wrong_regime"],
+    ["mean-reversion", "[Mean Reversion] Volatility is expanding; mean reversion paused to avoid trading against a trend move.", "volatility_expansion_blocked"],
+    ["mean-reversion", "[Mean Reversion] Bollinger band, RSI and order book have not lined up for a mean-reversion entry.", "mean_reversion_not_extreme"],
+    ["mean-reversion", "higher timeframe uptrend blocks short", "higher_timeframe_trend_blocked"],
+    ["regime", "[Regime Engine] Current market regime RANGE; no execution strategy configured.", "other_hold"],
+  ])("categorizes %s hold reason: %s", (strategy, reasoning, expected) => {
+    expect(categorizeNoEntryReason(strategy, reasoning)).toBe(expected);
   });
 });

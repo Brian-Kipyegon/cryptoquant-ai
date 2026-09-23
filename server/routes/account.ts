@@ -40,7 +40,7 @@ export function registerAccountRoutes(app: express.Express) {
       console.error(`[OKX Balance Error] Mode: ${isSandbox ? 'DEMO' : 'REAL'}`, errMsg);
       if (error.stack) console.error('[OKX Balance Error Stack]', error.stack);
       const isEnvError = errMsg.includes('50101') || errMsg.includes('APIKey does not match');
-      const hint = isEnvError ? " (璇锋鏌ュ綋鍓嶈处鎴锋ā寮忎笌 API Key 鏄惁鍖归厤锛涙ā鎷熺洏鍜屽疄鐩樺繀椤讳娇鐢ㄥ悇鑷嫭绔嬬殑鍑嵁)" : "";
+      const hint = isEnvError ? " (check that the account mode matches the API key; demo and live trading need separate credentials)" : "";
       res.status(500).json({ error: `okx ${errMsg}${hint}` });
     }
   });

@@ -70,7 +70,7 @@ export class AutoTradingEngine {
     const config = sanitizeAutoTradingConfig(input);
     if (!config) throw requestError(400, "Invalid auto-trading config", { error: "Invalid auto-trading config" });
     updateAutoTradingStore({ config });
-    pushAutoTradingLog(`鑷姩浜ゆ槗閰嶇疆宸叉洿鏂?(${config.sandbox ? "DEMO" : "LIVE"}, shadow=${config.shadowMode ? "on" : "off"})`);
+    pushAutoTradingLog(`Auto-trading config updated (${config.sandbox ? "DEMO" : "LIVE"}, shadow=${config.shadowMode ? "on" : "off"})`);
     return {
       config: serializeAutoTradingConfig(config),
       status: this.status(),
@@ -103,7 +103,7 @@ export class AutoTradingEngine {
       engineStartedAt: Date.now(),
       nextRunAt: Date.now(),
     });
-    pushAutoTradingLog(`鑷姩浜ゆ槗寮曟搸宸插惎鍔?(${config.sandbox ? "DEMO" : "LIVE"})`);
+    pushAutoTradingLog(`Auto-trading engine started (${config.sandbox ? "DEMO" : "LIVE"})`);
     this.schedule(0);
     return this.status();
   }
@@ -120,7 +120,7 @@ export class AutoTradingEngine {
         state: "stopping",
         nextRunAt: null,
       });
-      pushAutoTradingLog("已请求停止，当前周期完成后关闭");
+      pushAutoTradingLog("Stop requested; the current cycle will finish before shutdown");
       return this.status();
     }
 
@@ -129,7 +129,7 @@ export class AutoTradingEngine {
       nextRunAt: null,
       engineStartedAt: appStore.autoTrading.engineStartedAt,
     });
-    pushAutoTradingLog("自动交易引擎已停止");
+    pushAutoTradingLog("Auto-trading engine stopped");
     return this.status();
   }
 
@@ -149,7 +149,7 @@ export class AutoTradingEngine {
     if (providedConfig) {
       updateAutoTradingStore({ config });
     }
-    pushAutoTradingLog("已触发手动自动交易扫描");
+    pushAutoTradingLog("Manual auto-trading cycle requested");
     await this.executeCycle(config, "manual", Boolean(appStore.autoTrading.config && appStore.autoTrading.state !== "stopped"));
     return this.status();
   }

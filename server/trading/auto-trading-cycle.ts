@@ -212,7 +212,7 @@ export async function runAutoTradingCycle(config: AutoTradingConfig, trigger: "s
     trace: TraceDraft;
   }> = [];
 
-  pushAutoTradingLog(`寮€濮嬫壂鎻?(${trigger === "manual" ? "鎵嬪姩" : "瀹氭椂"}, ${macroGate.state})`);
+  pushAutoTradingLog(`Scan started (${trigger === "manual" ? "manual" : "scheduled"}, ${macroGate.state})`);
 
   const scannedSymbolSet = new Set<string>();
   for (const profile of config.scanProfiles) {
@@ -398,7 +398,7 @@ export async function runAutoTradingCycle(config: AutoTradingConfig, trigger: "s
 
   summary.candidates = candidates.length;
   if (candidates.length === 0) {
-    pushAutoTradingLog("本轮没有候选信号通过筛选");
+    pushAutoTradingLog("No auto-trading candidates passed the filters in this cycle");
     summary.completedAt = Date.now();
     summary.durationMs = summary.completedAt - startedAt;
     return { summary, nextDelayMs: cycleDelayMs };
@@ -492,7 +492,7 @@ export async function runAutoTradingCycle(config: AutoTradingConfig, trigger: "s
 
   summary.selected = selected.length;
   if (selected.length === 0) {
-    pushAutoTradingLog("所有候选信号都在执行前被过滤");
+    pushAutoTradingLog("All candidates were filtered out before execution");
     summary.completedAt = Date.now();
     summary.durationMs = summary.completedAt - startedAt;
     return { summary, nextDelayMs: cycleDelayMs };
@@ -574,11 +574,11 @@ export async function runAutoTradingCycle(config: AutoTradingConfig, trigger: "s
       }));
       finalizeTrace(candidate.trace, "shadow_mode", reason);
       if (shadowResult.action === "opened") {
-        pushAutoTradingLog(`褰卞瓙鎸佷粨宸插紑浠?${candidate.symbol} ${side.toUpperCase()} ${candidate.strategyId}`);
+        pushAutoTradingLog(`Shadow position opened ${candidate.symbol} ${side.toUpperCase()} ${candidate.strategyId}`);
       } else if (shadowResult.action === "reversed") {
-        pushAutoTradingLog(`褰卞瓙鎸佷粨宸插弽鎵?${candidate.symbol} ${candidate.strategyId}锛屼笂绗旂泩浜?${Number(shadowResult.closed?.realized_pnl || 0).toFixed(2)} USDT`);
+        pushAutoTradingLog(`Shadow position reversed ${candidate.symbol} ${candidate.strategyId}, previous PnL ${Number(shadowResult.closed?.realized_pnl || 0).toFixed(2)} USDT`);
       } else {
-        pushAutoTradingLog(`褰卞瓙鎸佷粨宸插埛鏂?${candidate.symbol} ${candidate.strategyId}`);
+        pushAutoTradingLog(`Shadow position refreshed ${candidate.symbol} ${candidate.strategyId}`);
       }
       continue;
     }

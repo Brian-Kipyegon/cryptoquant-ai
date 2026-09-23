@@ -150,7 +150,7 @@ export function evaluateMacroGate(market?: Partial<StrategyMarketData>): MacroGa
       state: 'BLOCK_NEW_RISK',
       regime: 'RISK_OFF',
       score,
-      reason: `宏观风险灯为 RISK_OFF (${score.toFixed(2)})，禁止新开风险仓位。`,
+      reason: `Macro risk light is RISK_OFF (${score.toFixed(2)}); no new risk positions.`,
       positionSizeMultiplier: 0,
       confidencePenalty: 100,
       entryThresholdAdjustment: 100,
@@ -163,7 +163,7 @@ export function evaluateMacroGate(market?: Partial<StrategyMarketData>): MacroGa
       state: 'ALLOW_REDUCED',
       regime: 'NEUTRAL',
       score,
-      reason: `宏观风险灯偏谨慎 (${score.toFixed(2)})，阈值+8、最多1仓、仓位减半，趋势多单禁开。`,
+      reason: `Macro risk light is cautious (${score.toFixed(2)}): threshold +8, max 1 position, half size, no trend longs.`,
       positionSizeMultiplier: 0.5,
       confidencePenalty: 8,
       entryThresholdAdjustment: 8,
@@ -175,7 +175,7 @@ export function evaluateMacroGate(market?: Partial<StrategyMarketData>): MacroGa
     state: 'ALLOW_FULL',
     regime: score >= MACRO_GATE_THRESHOLDS.riskOn ? 'RISK_ON' : 'NEUTRAL',
     score,
-    reason: `宏观风险灯允许交易 (${score.toFixed(2)})。`,
+    reason: `Macro risk light allows trading (${score.toFixed(2)}).`,
     positionSizeMultiplier: 1,
     confidencePenalty: 0,
     entryThresholdAdjustment: 0,
@@ -199,7 +199,7 @@ function withMacroGate(analysis: StrategyAnalysis, macroGate: MacroGateDecision)
 }
 
 function missingDataHold(regime: MarketRegime, regimeScore: number): StrategyAnalysis {
-  return hold(100, '⚠️ [风险阻断] 实盘模式下未检测到有效的实时技术指标。策略已挂起，等待真实 K 线和指标同步。', regime, regimeScore);
+  return hold(100, '⚠️ [Risk Block] No valid real-time indicators in live mode. Strategy suspended until real candles and indicators sync.', regime, regimeScore);
 }
 
 function marketFeatures(context: StrategyContext) {
@@ -296,23 +296,23 @@ function trendBreakout(context: StrategyContext, regime: MarketRegime, regimeSco
   const roundTripFee = risk.estimatedFeeRate * 2;
 
   if (regime === 'RISK_OFF') {
-    return hold(95, '[Risk Kill Switch] RISK_OFF 环境，趋势策略禁止开新仓。', regime, regimeScore);
+    return hold(95, '[Risk Kill Switch] RISK_OFF environment; the trend strategy may not open new positions.', regime, regimeScore);
   }
 
   if (regime !== 'TREND_UP' && regime !== 'TREND_DOWN') {
-    return hold(55, `[Trend Breakout] 当前 regime=${regime}，趋势策略等待明确方向。`, regime, regimeScore);
+    return hold(55, `[Trend Breakout] Current regime=${regime}; the trend strategy is waiting for a clear direction.`, regime, regimeScore);
   }
 
   if (macroGate.state === 'ALLOW_REDUCED' && regime === 'TREND_UP') {
-    return hold(88, '[Macro Gate] 宏观风险灯偏谨慎，禁止新开趋势多单。', regime, regimeScore);
+    return hold(88, '[Macro Gate] Macro risk light is cautious; new trend longs are blocked.', regime, regimeScore);
   }
 
   if (macroGate.state === 'ALLOW_REDUCED' && Math.abs(regimeScore) < 0.65) {
-    return hold(82, '[Macro Gate] 宏观降仓状态下，趋势策略只允许最强信号。', regime, regimeScore);
+    return hold(82, '[Macro Gate] Macro reduced-risk mode; the trend strategy only takes the strongest signals.', regime, regimeScore);
   }
 
   if (Math.abs(ticker.percentage) < roundTripFee * 2) {
-    return hold(45, `[Trend Breakout] 当前波动不足以覆盖双边手续费，等待更强突破。`, regime, regimeScore);
+    return hold(45, `[Trend Breakout] Current volatility does not cover round-trip fees; waiting for a stronger breakout.`, regime, regimeScore);
   }
 
   if (
@@ -327,7 +327,7 @@ function trendBreakout(context: StrategyContext, regime: MarketRegime, regimeSco
     return withMacroGate({
       signal: 'BUY',
       confidence: Math.min(94, 72 + Math.abs(regimeScore) * 35),
-      reasoning: `[Trend Breakout] TREND_UP 放行，收盘价突破20根高点(${high20.toFixed(2)})，动量与订单簿未冲突。`,
+      reasoning: `[Trend Breakout] TREND_UP cleared: close broke the 20-bar high (${high20.toFixed(2)}); momentum and order book do not conflict.`,
       regime,
       regimeScore,
       tp_price: last + stopDistance * 2,
@@ -349,7 +349,7 @@ function trendBreakout(context: StrategyContext, regime: MarketRegime, regimeSco
     return withMacroGate({
       signal: 'SELL',
       confidence: Math.min(94, 72 + Math.abs(regimeScore) * 35),
-      reasoning: `[Trend Breakout] TREND_DOWN 放行，收盘价跌破20根低点(${low20.toFixed(2)})，下行动量与订单簿未冲突。`,
+      reasoning: `[Trend Breakout] TREND_DOWN cleared: close broke the 20-bar low (${low20.toFixed(2)}); downside momentum and order book do not conflict.`,
       regime,
       regimeScore,
       tp_price: last - stopDistance * 2,
@@ -359,7 +359,7 @@ function trendBreakout(context: StrategyContext, regime: MarketRegime, regimeSco
     }, macroGate);
   }
 
-  return hold(50, `[Trend Breakout] regime=${regime} 但突破、动量、资金费率或订单簿条件未共振。`, regime, regimeScore);
+  return hold(50, `[Trend Breakout] regime=${regime} but breakout, momentum, funding rate or order book conditions are not aligned.`, regime, regimeScore);
 }
 
 function meanReversion(context: StrategyContext, regime: MarketRegime, regimeScore: number, macroGate: MacroGateDecision): StrategyAnalysis {
@@ -374,19 +374,19 @@ function meanReversion(context: StrategyContext, regime: MarketRegime, regimeSco
   const higherTimeframeTrend = context.strategyOptions?.higherTimeframeTrend;
 
   if (regime === 'RISK_OFF') {
-    return hold(95, '[Risk Kill Switch] RISK_OFF 环境，均值回归禁止接刀或摸顶。', regime, regimeScore);
+    return hold(95, '[Risk Kill Switch] RISK_OFF environment; mean reversion may not catch falling knives or pick tops.', regime, regimeScore);
   }
 
   if (regime !== 'RANGE') {
-    return hold(70, `[Mean Reversion] 当前 regime=${regime}，趋势环境禁止均值回归开仓。`, regime, regimeScore);
+    return hold(70, `[Mean Reversion] Current regime=${regime}; mean reversion entries are blocked in a trending market.`, regime, regimeScore);
   }
 
   if (macroGate.state === 'ALLOW_REDUCED' && Math.abs(features.momentum) > 0.01) {
-    return hold(82, '[Macro Gate] 宏观降仓状态下，禁止带明显短线动量的逆势均值回归单。', regime, regimeScore);
+    return hold(82, '[Macro Gate] Macro reduced-risk mode; counter-trend mean reversion against strong short-term moves is blocked.', regime, regimeScore);
   }
 
   if (volatilityExpanding) {
-    return hold(75, '[Mean Reversion] 波动率正在扩张，暂停均值回归，避免趋势突破中逆势。', regime, regimeScore);
+    return hold(75, '[Mean Reversion] Volatility is expanding; mean reversion paused to avoid trading against a trend move.', regime, regimeScore);
   }
 
   if (last <= lowerBand && indicators.rsi < 35 && features.orderbookImbalance > -0.35) {
@@ -396,7 +396,7 @@ function meanReversion(context: StrategyContext, regime: MarketRegime, regimeSco
     return withMacroGate({
       signal: 'BUY',
       confidence: 86,
-      reasoning: `[Mean Reversion] RANGE 放行，价格触及下轨(${lowerBand.toFixed(2)}) 且 RSI=${indicators.rsi.toFixed(1)}，目标回归中轨。`,
+      reasoning: `[Mean Reversion] RANGE cleared: price touched the lower band (${lowerBand.toFixed(2)}) and RSI=${indicators.rsi.toFixed(1)}; target is the middle band.`,
       regime,
       regimeScore,
       tp_price: indicators.sma20,
@@ -413,7 +413,7 @@ function meanReversion(context: StrategyContext, regime: MarketRegime, regimeSco
     return withMacroGate({
       signal: 'SELL',
       confidence: 86,
-      reasoning: `[Mean Reversion] RANGE 放行，价格触及上轨(${upperBand.toFixed(2)}) 且 RSI=${indicators.rsi.toFixed(1)}，目标回归中轨。`,
+      reasoning: `[Mean Reversion] RANGE cleared: price touched the upper band (${upperBand.toFixed(2)}) and RSI=${indicators.rsi.toFixed(1)}; target is the middle band.`,
       regime,
       regimeScore,
       tp_price: indicators.sma20,
@@ -423,7 +423,7 @@ function meanReversion(context: StrategyContext, regime: MarketRegime, regimeSco
     }, macroGate);
   }
 
-  return hold(50, '[Mean Reversion] 当前未触发布林带、RSI 与订单簿的均值回归共振。', regime, regimeScore);
+  return hold(50, '[Mean Reversion] Bollinger band, RSI and order book have not lined up for a mean-reversion entry.', regime, regimeScore);
 }
 
 export function runStrategyAnalysis(context: StrategyContext): StrategyAnalysis {
@@ -438,7 +438,7 @@ export function runStrategyAnalysis(context: StrategyContext): StrategyAnalysis 
 
   if (macroGate.state === 'BLOCK_NEW_RISK') {
     return withMacroGate(
-      hold(100, '[Macro Gate] BLOCK_NEW_RISK 已触发，禁止新开风险仓位。', regime, regimeScore),
+      hold(100, '[Macro Gate] BLOCK_NEW_RISK triggered; no new risk positions.', regime, regimeScore),
       macroGate
     );
   }
@@ -450,12 +450,12 @@ export function runStrategyAnalysis(context: StrategyContext): StrategyAnalysis 
   if (strategyId === 'regime-engine') return withMacroGate(regimeResult, macroGate);
   if (strategyId === 'risk-kill-switch') {
     const riskResult = regime === 'RISK_OFF'
-      ? hold(100, '[Risk Kill Switch] 已触发 RISK_OFF，自动交易应停止。', regime, regimeScore)
-      : hold(40, '[Risk Kill Switch] 未触发全局熔断。', regime, regimeScore);
+      ? hold(100, '[Risk Kill Switch] RISK_OFF triggered; auto-trading should stop.', regime, regimeScore)
+      : hold(40, '[Risk Kill Switch] Global circuit breaker not triggered.', regime, regimeScore);
     return withMacroGate(riskResult, macroGate);
   }
   if (strategyId === 'trend-breakout') return withMacroGate(trendBreakout(context, regime, regimeScore, macroGate), macroGate);
   if (strategyId === 'mean-reversion') return withMacroGate(meanReversion(context, regime, regimeScore, macroGate), macroGate);
 
-  return withMacroGate(hold(50, `[Regime Engine] 当前市场状态 ${regime}，未配置执行策略。`, regime, regimeScore), macroGate);
+  return withMacroGate(hold(50, `[Regime Engine] Current market regime ${regime}; no execution strategy configured.`, regime, regimeScore), macroGate);
 }

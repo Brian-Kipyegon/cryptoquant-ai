@@ -44,48 +44,51 @@ export function createDefaultAutoTradingStore(): AutoTradingStore {
   };
 }
 
+// Older versions wrote these log messages in Chinese, several of them mis-encoded
+// (UTF-8 bytes read as GBK). Persisted entries are translated on load so the
+// activity log reads consistently in English.
+const LEGACY_LOG_PREFIXES: Array<[string[], string]> = [
+  [["自动交易引擎已启动", "鑷\uE044姩浜ゆ槗寮曟搸宸插惎鍔?"], "Auto-trading engine started "],
+  [["自动交易配置已更新", "鑷\uE044姩浜ゆ槗閰嶇疆宸叉洿鏂?"], "Auto-trading config updated "],
+  [["开始扫描", "寮€濮嬫壂鎻?"], "Scan started "],
+  [["本轮没有候选信号通过筛选"], "No auto-trading candidates passed the filters in this cycle"],
+  [["所有候选信号都在执行前被过滤"], "All candidates were filtered out before execution"],
+  [["已触发手动自动交易扫描"], "Manual auto-trading cycle requested"],
+  [["自动交易引擎已停止"], "Auto-trading engine stopped"],
+  [["已请求停止，当前周期完成后关闭"], "Stop requested; the current cycle will finish before shutdown"],
+  [["褰卞瓙鎸佷粨宸插紑浠?"], "Shadow position opened "],
+  [["褰卞瓙鎸佷粨宸插弽鎵?"], "Shadow position reversed "],
+  [["褰卞瓙鎸佷粨宸插埛鏂?"], "Shadow position refreshed "],
+  [["褰卞瓙鎸佷粨宸插钩浠?"], "Shadow position closed "],
+  [["褰卞瓙鎸佷粨鍙嶅悜骞充粨"], "Shadow position closed on reverse signal"],
+  [["褰卞瓙鎸佷粨缁存姢澶辫触"], "Shadow position maintenance failed"],
+];
+
+const LEGACY_LOG_TOKENS: Array<[string, string]> = [
+  ["(手动,", "(manual,"],
+  ["(鎵嬪姩,", "(manual,"],
+  ["(定时,", "(scheduled,"],
+  ["(瀹氭椂,", "(scheduled,"],
+  ["锛屼笂绗旂泩浜?", ", previous PnL "],
+];
+
 export function sanitizeAutoTradingLogEntry(line: unknown) {
   if (typeof line !== "string") return "";
   const prefixMatch = line.match(/^(\[[^\]]+\]\s*)/);
   const prefix = prefixMatch?.[1] || "";
-  const message = line.slice(prefix.length);
-  const modeMatch = message.match(/\((DEMO|LIVE)\)/);
+  let message = line.slice(prefix.length);
 
-  if (message.includes("自动交易引擎已启动") && modeMatch) {
-    return `${prefix}自动交易引擎已启动 (${modeMatch[1]})`;
+  for (const [legacyPrefixes, english] of LEGACY_LOG_PREFIXES) {
+    const legacy = legacyPrefixes.find((candidate) => message.startsWith(candidate));
+    if (legacy) {
+      message = (english + message.slice(legacy.length).trimStart()).replace(/\s+\(/, " (").trimEnd();
+      break;
+    }
   }
-
-  if (message === "No auto-trading candidates passed the filters in this cycle") {
-    return `${prefix}本轮没有候选信号通过筛选`;
+  for (const [legacy, english] of LEGACY_LOG_TOKENS) {
+    message = message.split(legacy).join(english);
   }
-
-  if (message === "All candidates were filtered out before execution") {
-    return `${prefix}所有候选信号都在执行前被过滤`;
-  }
-
-  if (message === "Manual auto-trading cycle requested") {
-    return `${prefix}已触发手动自动交易扫描`;
-  }
-
-  if (message === "Auto-trading engine stopped") {
-    return `${prefix}自动交易引擎已停止`;
-  }
-
-  if (message === "Stop requested; the current cycle will finish before shutdown") {
-    return `${prefix}已请求停止，当前周期完成后关闭`;
-  }
-
-  const scanMatch = message.match(/^Scan started \((scheduled|manual), (.+)\)$/);
-  if (scanMatch) {
-    return `${prefix}开始扫描 (${scanMatch[1] === "manual" ? "手动" : "定时"}, ${scanMatch[2]})`;
-  }
-
-  const configMatch = message.match(/^Auto-trading config updated \((DEMO|LIVE), shadow=(on|off)\)$/);
-  if (configMatch) {
-    return `${prefix}自动交易配置已更新 (${configMatch[1]}, shadow=${configMatch[2]})`;
-  }
-
-  return line;
+  return `${prefix}${message}`;
 }
 
 export const appStore = {
@@ -367,7 +370,7 @@ export function updateAutoTradingStore(patch: Partial<AutoTradingStore>) {
 }
 
 export function pushAutoTradingLog(message: string) {
-  const line = `[${new Date().toLocaleTimeString("zh-CN", { hour12: false })}] ${message}`;
+  const line = `[${new Date().toLocaleTimeString("en-GB", { hour12: false })}] ${message}`;
   const recentLogs = [line, ...appStore.autoTrading.recentLogs].slice(0, AUTO_TRADING_LOG_LIMIT);
   updateAutoTradingStore({ recentLogs });
   return line;
