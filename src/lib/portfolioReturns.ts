@@ -538,7 +538,7 @@ function isClosedReturnRow(row: PortfolioReturnHistoryRow) {
 function groupRows(rows: PortfolioReturnHistoryRow[], keyForRow: (row: PortfolioReturnHistoryRow) => string | null) {
   const groups = new Map<string, PortfolioReturnHistoryRow[]>();
   for (const row of rows) {
-    const key = keyForRow(row) || '未分类';
+    const key = keyForRow(row) || 'Uncategorized';
     groups.set(key, [...(groups.get(key) || []), row]);
   }
   return Array.from(groups.entries())

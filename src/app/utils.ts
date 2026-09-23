@@ -103,36 +103,36 @@ export const NAV_ITEMS: Array<{
   label: string;
   icon: React.ComponentType<{ className?: string }>;
 }> = [
-  { key: "dashboard", label: "仪表盘", icon: LayoutDashboard },
-  { key: "market", label: "市场分析", icon: TrendingUp },
-  { key: "history", label: "交易历史", icon: History },
-  { key: "portfolio", label: "投资组合", icon: Wallet },
-  { key: "backtest", label: "策略验证", icon: FlaskConical },
-  { key: "reliability", label: "执行可靠性", icon: ShieldCheck },
-  { key: "audit", label: "监控审计", icon: ScrollText },
-  { key: "diagnostics", label: "策略诊断", icon: Radar },
-  { key: "settings", label: "系统设置", icon: Settings },
+  { key: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { key: "market", label: "Market", icon: TrendingUp },
+  { key: "history", label: "History", icon: History },
+  { key: "portfolio", label: "Portfolio", icon: Wallet },
+  { key: "backtest", label: "Backtest", icon: FlaskConical },
+  { key: "reliability", label: "Reliability", icon: ShieldCheck },
+  { key: "audit", label: "Audit", icon: ScrollText },
+  { key: "diagnostics", label: "Diagnostics", icon: Radar },
+  { key: "settings", label: "Settings", icon: Settings },
 ];
 
 const STAGE_LABELS: Record<string, string> = {
-  market_data: "行情就绪",
-  strategy_signal: "策略信号",
-  confidence_gate: "置信度门槛",
-  macro_gate: "宏观门控",
-  persistent_risk: "持久化风控",
-  portfolio_limit: "组合约束",
-  correlation_filter: "相关性过滤",
-  timeframe_conflict: "周期冲突",
-  position_sizing: "仓位计算",
-  account_risk_check: "账户风控检查",
-  shadow_mode: "影子模式",
-  order_submit: "下单提交",
+  market_data: "Market data ready",
+  strategy_signal: "Strategy signal",
+  confidence_gate: "Confidence threshold",
+  macro_gate: "Macro gate",
+  persistent_risk: "Persistent risk",
+  portfolio_limit: "Portfolio limit",
+  correlation_filter: "Correlation filter",
+  timeframe_conflict: "Timeframe conflict",
+  position_sizing: "Position sizing",
+  account_risk_check: "Account risk check",
+  shadow_mode: "Shadow mode",
+  order_submit: "Order submit",
 };
 
 const EXIT_REASON_LABELS: Record<string, string> = {
-  take_profit: "止盈",
-  stop_loss: "止损",
-  reverse_signal: "反向信号",
+  take_profit: "Take profit",
+  stop_loss: "Stop loss",
+  reverse_signal: "Reverse signal",
 };
 
 export function readStoredToken() {
@@ -179,7 +179,7 @@ export function parseJsonSafely(value: string | null) {
 
 export function formatDateTime(value?: number | null) {
   if (!value) return "—";
-  return new Date(value).toLocaleString("zh-CN", { hour12: false });
+  return new Date(value).toLocaleString("en-GB", { hour12: false });
 }
 
 export function formatDateOnly(value?: number | null) {
@@ -193,7 +193,7 @@ export function formatDateOnly(value?: number | null) {
 
 export function formatPrice(value?: number | null, digits = 2) {
   if (value === null || value === undefined || Number.isNaN(value)) return "—";
-  return Number(value).toLocaleString("zh-CN", {
+  return Number(value).toLocaleString("en-US", {
     minimumFractionDigits: digits,
     maximumFractionDigits: digits,
   });
@@ -210,7 +210,7 @@ export function formatPct(value?: number | null, digits = 2) {
 }
 
 export function stageLabel(stage?: string | null) {
-  if (!stage) return "已通过";
+  if (!stage) return "Passed";
   return STAGE_LABELS[stage] || stage;
 }
 
@@ -220,10 +220,10 @@ export function exitReasonLabel(reason?: string | null) {
 }
 
 export function riskStatusLabel(riskState: RiskState | null) {
-  if (!riskState) return "加载中";
+  if (!riskState) return "Loading";
   if (riskState.killSwitchActive) return "Kill Switch";
-  if (riskState.newRiskBlocked) return "连亏暂停";
-  return "运行中";
+  if (riskState.newRiskBlocked) return "Paused after losses";
+  return "Running";
 }
 
 export function mergeConfig(

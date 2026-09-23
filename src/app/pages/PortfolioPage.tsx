@@ -27,16 +27,16 @@ const PortfolioReturnCurveChart = React.lazy(() =>
 );
 
 const MODE_OPTIONS: Array<{ key: PortfolioReturnMode; label: string }> = [
-  { key: "live", label: "实盘" },
-  { key: "shadow", label: "影子" },
-  { key: "demo", label: "OKX 模拟盘" },
+  { key: "live", label: "Live" },
+  { key: "shadow", label: "Shadow" },
+  { key: "demo", label: "OKX demo" },
 ];
 
 const RANGE_OPTIONS: Array<{ key: PortfolioReturnRange; label: string }> = [
-  { key: "7d", label: "7天" },
-  { key: "30d", label: "30天" },
-  { key: "90d", label: "90天" },
-  { key: "all", label: "全部" },
+  { key: "7d", label: "7d" },
+  { key: "30d", label: "30d" },
+  { key: "90d", label: "90d" },
+  { key: "all", label: "All" },
 ];
 
 function trendFor(value?: number | null) {
@@ -53,16 +53,16 @@ function formatNullablePct(value?: number | null, digits = 2) {
 
 function formatHoldMinutes(value?: number | null) {
   if (value === null || value === undefined || Number.isNaN(value)) return "—";
-  if (value < 60) return `${formatPrice(value, 0)} 分钟`;
-  return `${formatPrice(value / 60, 1)} 小时`;
+  if (value < 60) return `${formatPrice(value, 0)} min`;
+  return `${formatPrice(value / 60, 1)} h`;
 }
 
 function statusLabel(row: PortfolioReturnHistoryRow) {
-  if (row.source === "exchange_bill" && row.status === "settled") return "账单结算";
-  if (row.source === "shadow" && row.status === "open") return "影子持仓";
-  if (row.source === "shadow" && row.status === "closed") return "影子平仓";
-  if (row.status === "closed") return "已平仓";
-  if (row.status === "open") return "持仓中";
+  if (row.source === "exchange_bill" && row.status === "settled") return "Bill settled";
+  if (row.source === "shadow" && row.status === "open") return "Shadow open";
+  if (row.source === "shadow" && row.status === "closed") return "Shadow closed";
+  if (row.status === "closed") return "Closed";
+  if (row.status === "open") return "Open";
   return row.status || "—";
 }
 
@@ -131,38 +131,38 @@ function ReturnDetails({ row }: { row: PortfolioReturnHistoryRow | null }) {
   if (!row) {
     return (
       <div className="rounded-2xl border border-zinc-800 bg-zinc-950/60 px-4 py-8 text-center text-sm text-zinc-500">
-        选择一条收益记录查看交易细节。
+        Select a return record to see trade details.
       </div>
     );
   }
 
   const detailPairs = [
-    ["标的", row.symbol],
-    ["方向", row.side],
-    ["策略", row.strategyId || "—"],
-    ["周期", row.timeframe || "—"],
-    ["状态", statusLabel(row)],
-    ["开仓时间", formatDateTime(row.openedAt)],
-    ["平仓/更新时间", formatDateTime(row.closedAt || row.timestamp)],
-    ["入场价", formatPrice(row.entryPrice, 2)],
-    ["出场价", formatPrice(row.exitPrice, 2)],
-    ["标记价", formatPrice(row.markPrice, 2)],
-    ["止盈", formatPrice(row.tpPrice, 2)],
-    ["止损", formatPrice(row.slPrice, 2)],
-    ["保证金/投入", formatUsd(row.margin || row.amount || 0, 2)],
-    ["名义价值", formatUsd(row.notional || 0, 2)],
-    ["杠杆", row.leverage ? `${formatPrice(row.leverage, 1)}x` : "—"],
-    ["持仓时长", formatHoldMinutes(row.holdMinutes)],
-    ["市场状态", row.regime || "—"],
-    ["宏观门控", row.macroGate || "—"],
-    ["入场理由", row.entryReason || "—"],
-    ["退出原因", exitReasonLabel(row.exitReason)],
-    ["数据来源", row.source === "exchange_bill" ? "OKX 账单" : row.source === "shadow" ? "影子执行" : "本地交易"],
-    ["账单类型", row.type || "—"],
-    ["账单子类型", row.subType || "—"],
-    ["币种", row.ccy || "—"],
-    ["余额变动", row.balanceChange === null ? "—" : formatUsd(row.balanceChange, 3)],
-    ["关联本地交易", row.localTradeId || "—"],
+    ["Symbol", row.symbol],
+    ["Side", row.side],
+    ["Strategy", row.strategyId || "—"],
+    ["Timeframe", row.timeframe || "—"],
+    ["Status", statusLabel(row)],
+    ["Opened", formatDateTime(row.openedAt)],
+    ["Closed/updated", formatDateTime(row.closedAt || row.timestamp)],
+    ["Entry price", formatPrice(row.entryPrice, 2)],
+    ["Exit price", formatPrice(row.exitPrice, 2)],
+    ["Mark price", formatPrice(row.markPrice, 2)],
+    ["Take profit", formatPrice(row.tpPrice, 2)],
+    ["Stop loss", formatPrice(row.slPrice, 2)],
+    ["Margin/amount", formatUsd(row.margin || row.amount || 0, 2)],
+    ["Notional", formatUsd(row.notional || 0, 2)],
+    ["Leverage", row.leverage ? `${formatPrice(row.leverage, 1)}x` : "—"],
+    ["Hold time", formatHoldMinutes(row.holdMinutes)],
+    ["Regime", row.regime || "—"],
+    ["Macro gate", row.macroGate || "—"],
+    ["Entry reason", row.entryReason || "—"],
+    ["Exit reason", exitReasonLabel(row.exitReason)],
+    ["Data source", row.source === "exchange_bill" ? "OKX bill" : row.source === "shadow" ? "Shadow execution" : "Local trade"],
+    ["Bill type", row.type || "—"],
+    ["Bill subtype", row.subType || "—"],
+    ["Currency", row.ccy || "—"],
+    ["Balance change", row.balanceChange === null ? "—" : formatUsd(row.balanceChange, 3)],
+    ["Linked local trade", row.localTradeId || "—"],
   ];
 
   return (
@@ -179,14 +179,14 @@ function ReturnDetails({ row }: { row: PortfolioReturnHistoryRow | null }) {
       {row.source === "shadow" ? (
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="rounded-2xl border border-zinc-800 bg-zinc-950/60 p-3">
-            <div className="text-xs text-zinc-500">滑点</div>
+            <div className="text-xs text-zinc-500">Slippage</div>
             <div className="mt-1 text-sm text-zinc-200">
               {row.slippageBps === null ? "—" : `${formatPrice(row.slippageBps, 2)} bps`}
             </div>
           </div>
           <div className="rounded-2xl border border-zinc-800 bg-zinc-950/60 p-3">
-            <div className="text-xs text-zinc-500">估算来源</div>
-            <div className="mt-1 text-sm text-zinc-200">{row.isEstimated ? "估算" : "实时"}</div>
+            <div className="text-xs text-zinc-500">Estimate source</div>
+            <div className="mt-1 text-sm text-zinc-200">{row.isEstimated ? "Estimated" : "Live"}</div>
           </div>
         </div>
       ) : null}
@@ -224,9 +224,9 @@ function ReturnDetails({ row }: { row: PortfolioReturnHistoryRow | null }) {
 type ReturnAnalyticsTab = "overview" | "history" | "detail";
 
 const RETURN_TABS: Array<{ key: ReturnAnalyticsTab; label: string }> = [
-  { key: "overview", label: "收益概览" },
-  { key: "history", label: "收益历史" },
-  { key: "detail", label: "记录详情" },
+  { key: "overview", label: "Overview" },
+  { key: "history", label: "History" },
+  { key: "detail", label: "Details" },
 ];
 
 function TabButton({
@@ -280,14 +280,14 @@ function ReturnNotice({
 function ReturnMetricsGrid({ summary }: { summary: PortfolioReturnAnalytics["summary"] | undefined }) {
   return (
     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-      <MetricCard label="累计收益" value={formatUsd(summary?.totalPnl || 0, 3)} trend={trendFor(summary?.totalPnl)} />
-      <MetricCard label="账户收益率" value={formatNullablePct(summary?.accountReturnPct)} trend={trendFor(summary?.accountReturnPct)} />
-      <MetricCard label="单笔平均 ROI" value={formatNullablePct(summary?.avgTradeRoiPct)} trend={trendFor(summary?.avgTradeRoiPct)} />
-      <MetricCard label="胜率" value={formatNullablePct(summary?.winRate)} />
+      <MetricCard label="Cumulative PnL" value={formatUsd(summary?.totalPnl || 0, 3)} trend={trendFor(summary?.totalPnl)} />
+      <MetricCard label="Account return" value={formatNullablePct(summary?.accountReturnPct)} trend={trendFor(summary?.accountReturnPct)} />
+      <MetricCard label="Avg ROI per trade" value={formatNullablePct(summary?.avgTradeRoiPct)} trend={trendFor(summary?.avgTradeRoiPct)} />
+      <MetricCard label="Win rate" value={formatNullablePct(summary?.winRate)} />
       <MetricCard label="Profit Factor" value={formatPrice(summary?.profitFactor || 0, 2)} />
-      <MetricCard label="最大回撤" value={formatNullablePct(summary?.maxDrawdownPct)} trend={trendFor(summary?.maxDrawdownPct)} />
-      <MetricCard label="已平仓数" value={String(summary?.closedTrades || 0)} hint={`开放：${summary?.openTrades || 0}`} />
-      <MetricCard label="未实现收益" value={formatUsd(summary?.unrealizedPnl || 0, 3)} trend={trendFor(summary?.unrealizedPnl)} />
+      <MetricCard label="Max drawdown" value={formatNullablePct(summary?.maxDrawdownPct)} trend={trendFor(summary?.maxDrawdownPct)} />
+      <MetricCard label="Closed trades" value={String(summary?.closedTrades || 0)} hint={`Open: ${summary?.openTrades || 0}`} />
+      <MetricCard label="Unrealized PnL" value={formatUsd(summary?.unrealizedPnl || 0, 3)} trend={trendFor(summary?.unrealizedPnl)} />
     </div>
   );
 }
@@ -302,16 +302,16 @@ function ReturnCurvePanel({
   return (
     <section className={cardClassName()}>
       <SectionTitle
-        title="资金曲线"
-        subtitle={`资金基准：${formatUsd(returnAnalytics?.capitalBase || 0, 2)}（${returnAnalytics?.capitalBaseSource === "equity" ? "账户权益" : returnAnalytics?.capitalBaseSource === "fallback" ? "本地交易投入估算" : "暂无"}）`}
-        action={refreshing ? <span className="text-sm text-zinc-500">刷新中...</span> : null}
+        title="Equity curve"
+        subtitle={`Capital base: ${formatUsd(returnAnalytics?.capitalBase || 0, 2)} (${returnAnalytics?.capitalBaseSource === "equity" ? "account equity" : returnAnalytics?.capitalBaseSource === "fallback" ? "estimated from local trades" : "none"})`}
+        action={refreshing ? <span className="text-sm text-zinc-500">Refreshing...</span> : null}
       />
       <div className="h-[320px]">
         {returnAnalytics?.equityCurve.length ? (
           <React.Suspense
             fallback={
               <div className="flex h-full items-center justify-center rounded-2xl border border-zinc-800 bg-zinc-950/60 text-sm text-zinc-500">
-                正在加载资金曲线...
+                Loading equity curve...
               </div>
             }
           >
@@ -319,7 +319,7 @@ function ReturnCurvePanel({
           </React.Suspense>
         ) : (
           <div className="flex h-full items-center justify-center rounded-2xl border border-zinc-800 bg-zinc-950/60 text-sm text-zinc-500">
-            暂无收益曲线数据
+            No return curve data yet
           </div>
         )}
       </div>
@@ -338,22 +338,22 @@ function ReturnHistoryTable({
 }) {
   return (
     <section className={cardClassName()}>
-      <SectionTitle title="收益历史" subtitle="精简展示关键字段；账单字段、信号和原始 JSON 放在记录详情。" />
+      <SectionTitle title="Return history" subtitle="Key fields only; bill fields, signals and raw JSON are in the record details." />
       <div className="overflow-x-auto rounded-2xl border border-zinc-800">
         <div className="min-w-[920px]">
           <div className="grid grid-cols-[150px_100px_70px_150px_110px_120px_100px_100px] gap-3 border-b border-zinc-800 bg-zinc-950/80 px-4 py-3 text-xs uppercase tracking-wide text-zinc-500">
-            <span>时间</span>
-            <span>标的</span>
-            <span>方向</span>
-            <span>策略</span>
-            <span>状态</span>
-            <span>收益</span>
+            <span>Time</span>
+            <span>Symbol</span>
+            <span>Side</span>
+            <span>Strategy</span>
+            <span>Status</span>
+            <span>PnL</span>
             <span>ROI</span>
-            <span>费用/滑点</span>
+            <span>Fees/slippage</span>
           </div>
           <div className="max-h-[520px] overflow-y-auto">
             {history.length === 0 ? (
-              <div className="px-4 py-8 text-center text-sm text-zinc-500">暂无自动交易收益记录</div>
+              <div className="px-4 py-8 text-center text-sm text-zinc-500">No auto-trading return records</div>
             ) : (
               history.map((row) => (
                 <button
@@ -441,8 +441,8 @@ export function ReturnAnalyticsModule({
   const shell = (children: React.ReactNode) => (
     <div className="space-y-5">
       <SectionTitle
-        title="自动交易收益分析"
-        subtitle={`当前口径：${modeLabel(returnMode)} / ${activeRangeLabel}`}
+        title="Auto-trading returns"
+        subtitle={`Scope: ${modeLabel(returnMode)} / ${activeRangeLabel}`}
         action={<ReturnControls returnMode={returnMode} setReturnMode={setReturnMode} returnRange={returnRange} setReturnRange={setReturnRange} />}
       />
       <div className="flex flex-wrap gap-2">
@@ -462,7 +462,7 @@ export function ReturnAnalyticsModule({
   if (returnAnalyticsError && !returnAnalytics) {
     return shell(
       <div className="rounded-2xl border border-zinc-800 bg-zinc-950/60 py-10 text-center text-sm text-zinc-400">
-        未拿到真实收益数据前不会展示 0 值收益面板。请检查 OKX 凭据、账户模式和网络连通性后重试。
+        The returns panel stays hidden until real return data arrives, rather than showing zeros. Check the OKX credentials, account mode and network, then retry.
       </div>
     );
   }
@@ -470,7 +470,7 @@ export function ReturnAnalyticsModule({
   if (!returnAnalytics && !returnAnalyticsError) {
     return shell(
       <div className="rounded-2xl border border-zinc-800 bg-zinc-950/60 py-10 text-center text-sm text-zinc-400">
-        {returnAnalyticsLoadingInitial ? "正在读取真实收益数据..." : "等待收益数据刷新..."}
+        {returnAnalyticsLoadingInitial ? "Loading real return data..." : "Waiting for return data to refresh..."}
       </div>
     );
   }
@@ -491,8 +491,8 @@ export function ReturnAnalyticsModule({
       {activeTab === "detail" ? (
         <section className={cardClassName()}>
           <SectionTitle
-            title="记录详情"
-            subtitle={selectedRow ? `${selectedRow.symbol} / ${formatDateTime(selectedRow.timestamp)}` : "从收益历史中选择一条记录查看详情。"}
+            title="Record details"
+            subtitle={selectedRow ? `${selectedRow.symbol} / ${formatDateTime(selectedRow.timestamp)}` : "Select a record in the return history to see details."}
             action={
               history.length ? (
                 <button
@@ -500,7 +500,7 @@ export function ReturnAnalyticsModule({
                   onClick={() => setActiveTab("history")}
                   className="rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-1.5 text-sm text-zinc-300 transition hover:border-zinc-600 hover:text-white"
                 >
-                  返回历史
+                  Back to history
                 </button>
               ) : null
             }
@@ -544,36 +544,36 @@ export function PortfolioPage({
 
   return (
     <div className="space-y-6">
-      <SectionTitle title="投资组合" subtitle="优先查看账户权益、持仓风险、今日盈亏和自动交易收益。" />
+      <SectionTitle title="Portfolio" subtitle="Account equity, position risk, today's PnL and auto-trading returns." />
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
-        <MetricCard label="账户权益" value={formatUsd(balance?.equityUSDT || 0)} />
-        <MetricCard label="可用余额" value={formatUsd(balance?.availableUSDT || 0)} />
+        <MetricCard label="Account equity" value={formatUsd(balance?.equityUSDT || 0)} />
+        <MetricCard label="Available balance" value={formatUsd(balance?.availableUSDT || 0)} />
         <MetricCard
-          label="今日已实现盈亏"
+          label="Today's realized PnL"
           value={formatUsd(realizedPnl?.dailyPnL || 0)}
           trend={trendFor(realizedPnl?.dailyPnL)}
         />
-        <MetricCard label="持仓浮盈亏" value={formatUsd(holdingPnl, 3)} trend={trendFor(holdingPnl)} />
-        <MetricCard label="持仓数量" value={String(positions.length)} hint="当前开放仓位" />
-        <MetricCard label="自动交易累计收益" value={formatUsd(autoTradingPnl, 3)} trend={trendFor(autoTradingPnl)} />
+        <MetricCard label="Position unrealized PnL" value={formatUsd(holdingPnl, 3)} trend={trendFor(holdingPnl)} />
+        <MetricCard label="Open positions" value={String(positions.length)} hint="Currently open" />
+        <MetricCard label="Auto-trading cumulative PnL" value={formatUsd(autoTradingPnl, 3)} trend={trendFor(autoTradingPnl)} />
       </div>
 
       <div className="grid gap-6 xl:grid-cols-2">
         <section className={cardClassName()}>
-          <SectionTitle title="当前持仓" subtitle="优先确认风险敞口和浮动盈亏。" />
+          <SectionTitle title="Open positions" subtitle="Check exposure and unrealized PnL first." />
           <div className="overflow-x-auto rounded-2xl border border-zinc-800">
             <div className="min-w-[680px]">
               <div className="grid grid-cols-[120px_80px_110px_110px_110px_120px] gap-3 border-b border-zinc-800 bg-zinc-950/80 px-4 py-3 text-xs uppercase tracking-wide text-zinc-500">
-                <span>标的</span>
-                <span>方向</span>
-                <span>合约数</span>
-                <span>开仓价</span>
-                <span>标记价</span>
+                <span>Symbol</span>
+                <span>Side</span>
+                <span>Contracts</span>
+                <span>Entry price</span>
+                <span>Mark price</span>
                 <span>PnL</span>
               </div>
               <div className="max-h-[420px] overflow-y-auto">
                 {positions.length === 0 ? (
-                  <div className="px-4 py-8 text-center text-sm text-zinc-500">暂无持仓</div>
+                  <div className="px-4 py-8 text-center text-sm text-zinc-500">No open positions</div>
                 ) : (
                   positions.map((row, index) => (
                     <div
@@ -597,19 +597,19 @@ export function PortfolioPage({
         </section>
 
         <section className={cardClassName()}>
-          <SectionTitle title="最近已实现盈亏" subtitle="来自 OKX 账单的近期结算记录。" />
+          <SectionTitle title="Recent realized PnL" subtitle="Recent settlements from OKX bills." />
           <div className="overflow-x-auto rounded-2xl border border-zinc-800">
             <div className="min-w-[560px]">
               <div className="grid grid-cols-[160px_100px_80px_100px_100px] gap-3 border-b border-zinc-800 bg-zinc-950/80 px-4 py-3 text-xs uppercase tracking-wide text-zinc-500">
-                <span>时间</span>
-                <span>标的</span>
-                <span>类型</span>
+                <span>Time</span>
+                <span>Symbol</span>
+                <span>Type</span>
                 <span>PnL</span>
-                <span>费用</span>
+                <span>Fees</span>
               </div>
               <div className="max-h-[420px] overflow-y-auto">
                 {(realizedPnl?.rows || []).length === 0 ? (
-                  <div className="px-4 py-8 text-center text-sm text-zinc-500">暂无近期已实现盈亏</div>
+                  <div className="px-4 py-8 text-center text-sm text-zinc-500">No recent realized PnL</div>
                 ) : (
                   (realizedPnl?.rows || []).slice(0, 30).map((row) => (
                     <div

@@ -48,17 +48,17 @@ export function AuditDrilldownDrawer({
     <Drawer
       open={open}
       onClose={onClose}
-      title={mode === "regime" ? "按 Regime 复盘" : "按币种复盘"}
-      subtitle={selectedKey ? `当前选择：${selectedKey}` : "当前选择：全部"}
+      title={mode === "regime" ? "Review by regime" : "Review by symbol"}
+      subtitle={selectedKey ? `Selected: ${selectedKey}` : "Selected: all"}
     >
       <div className="grid gap-4 md:grid-cols-4">
-        <MetricCard label="交易数" value={String(stats.trades)} />
+        <MetricCard label="Trades" value={String(stats.trades)} />
         <MetricCard
-          label="总 PnL"
+          label="Total PnL"
           value={formatUsd(stats.pnl)}
           trend={stats.pnl > 0 ? "up" : stats.pnl < 0 ? "down" : "neutral"}
         />
-        <MetricCard label="胜率" value={formatPct(stats.winRate)} />
+        <MetricCard label="Win rate" value={formatPct(stats.winRate)} />
         <MetricCard
           label={mode === "regime" ? "Profit Factor" : "Expectancy"}
           value={mode === "regime" ? formatPrice(stats.profitFactor, 2) : formatUsd(stats.expectancy, 3)}
@@ -67,7 +67,7 @@ export function AuditDrilldownDrawer({
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[280px_1fr]">
         <div className={cardClassName("p-4")}>
-          <div className="mb-3 text-sm font-medium text-zinc-300">分组列表</div>
+          <div className="mb-3 text-sm font-medium text-zinc-300">Groups</div>
           <div className="space-y-2">
             <button
               type="button"
@@ -79,7 +79,7 @@ export function AuditDrilldownDrawer({
                   : "bg-zinc-950 text-zinc-300 hover:bg-zinc-900"
               )}
             >
-              <span>全部</span>
+              <span>All</span>
               <span>{Object.keys(source).length}</span>
             </button>
             {groups.map(([key, stat]) => (
@@ -102,10 +102,10 @@ export function AuditDrilldownDrawer({
         </div>
 
         <div className={cardClassName("p-4")}>
-          <div className="mb-3 text-sm font-medium text-zinc-300">已平仓样本</div>
+          <div className="mb-3 text-sm font-medium text-zinc-300">Closed trades</div>
           {loading ? (
             <div className="rounded-2xl border border-zinc-800 bg-zinc-950/60 px-4 py-8 text-center text-sm text-zinc-500">
-              加载交易样本中...
+              Loading trades...
             </div>
           ) : error ? (
             <div className="rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-8 text-center text-sm text-rose-200">
@@ -113,19 +113,19 @@ export function AuditDrilldownDrawer({
             </div>
           ) : filteredTrades.length === 0 ? (
             <div className="rounded-2xl border border-zinc-800 bg-zinc-950/60 px-4 py-8 text-center text-sm text-zinc-500">
-              当前筛选下暂无已平仓样本
+              No closed trades for this filter
             </div>
           ) : (
             <div className="overflow-hidden rounded-2xl border border-zinc-800">
               <div className="grid grid-cols-[140px_100px_1fr_80px_100px_100px_110px_110px] gap-3 border-b border-zinc-800 bg-zinc-950/80 px-4 py-3 text-xs uppercase tracking-wide text-zinc-500">
-                <span>时间</span>
-                <span>标的</span>
-                <span>策略</span>
-                <span>方向</span>
-                <span>入场价</span>
-                <span>平仓价</span>
+                <span>Time</span>
+                <span>Symbol</span>
+                <span>Strategy</span>
+                <span>Side</span>
+                <span>Entry price</span>
+                <span>Exit price</span>
                 <span>PnL</span>
-                <span>退出原因</span>
+                <span>Exit reason</span>
               </div>
               <div className="max-h-[520px] overflow-y-auto">
                 {filteredTrades.slice(0, 100).map((row) => (

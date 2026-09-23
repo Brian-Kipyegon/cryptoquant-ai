@@ -91,9 +91,9 @@ export function useAutoTradingRuntime({
       setScanProfilesSaving(true);
       try {
         await saveAutoConfig({ ...autoConfig, scanProfiles: profiles });
-        onToast({ kind: "success", message: "扫描配置已保存，将从下一轮扫描开始使用。" });
+        onToast({ kind: "success", message: "Scan profiles saved; they apply from the next scan." });
       } catch (error: any) {
-        onToast({ kind: "error", message: error?.message || "扫描配置保存失败" });
+        onToast({ kind: "error", message: error?.message || "Failed to save scan profiles" });
       } finally {
         setScanProfilesSaving(false);
       }
@@ -122,10 +122,10 @@ export function useAutoTradingRuntime({
         await Promise.all([refreshStatus(), refreshDiagnostics()]);
         onToast({
           kind: "success",
-          message: action === "run" ? "手动扫描已触发" : `自动交易已${action === "start" ? "启动" : "停止"}`,
+          message: action === "run" ? "Manual scan triggered" : `Auto-trading ${action === "start" ? "started" : "stopped"}`,
         });
       } catch (error: any) {
-        onToast({ kind: "error", message: error?.message || "执行失败" });
+        onToast({ kind: "error", message: error?.message || "Action failed" });
       } finally {
         setAutoActionPending(null);
       }

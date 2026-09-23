@@ -85,7 +85,7 @@ export function Drawer({
         type="button"
         className="absolute inset-0 bg-black/55"
         onClick={onClose}
-        aria-label="关闭抽屉"
+        aria-label="Close drawer"
       />
       <div className="relative h-full w-full max-w-2xl overflow-y-auto border-l border-zinc-800 bg-zinc-950 p-6 shadow-2xl">
         <div className="mb-6 flex items-start justify-between gap-4">
@@ -107,7 +107,7 @@ export function Drawer({
   );
 }
 
-export function PageLoading({ title = "正在加载页面..." }: { title?: string }) {
+export function PageLoading({ title = "Loading page..." }: { title?: string }) {
   return (
     <div className={cardClassName("flex min-h-[240px] items-center justify-center text-sm text-zinc-400")}>
       {title}

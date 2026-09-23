@@ -150,9 +150,9 @@ export function createDefaultMarketAnalysis(): MarketAnalysisState {
       { timeframe: '1d', signal: 'SELL', strength: 30 },
     ],
     volatility: 0.45,
-    liquidity: '充足',
-    volatilityLabel: '中等',
-    institutionalParticipation: '高',
+    liquidity: 'Ample',
+    volatilityLabel: 'Medium',
+    institutionalParticipation: 'High',
     onChainData: {
       exchangeInflow: 0,
       whaleActivity: 50,
@@ -264,9 +264,9 @@ export function deriveMarketMicrostructure(
   const range = lastPrice > 0 ? Math.max(0, high - low) : 0;
   const positionInRange = range > 0 ? clamp((lastPrice - low) / range, 0, 1) : 0.5;
   const volatilityVal = lastPrice > 0 ? range / lastPrice : previous.volatility;
-  const volLabel = volatilityVal > 0.05 ? '极高' : volatilityVal > 0.03 ? '高' : volatilityVal > 0.01 ? '中等' : '低';
-  const liqLabel = totalDepth > 500 ? '极高' : totalDepth > 100 ? '充足' : totalDepth > 0 ? '一般' : '等待订单簿';
-  const instLabel = whaleActivity > 55 || Math.abs(pct) > 5 ? '极高' : whaleActivity > 35 || Math.abs(pct) > 2 ? '高' : '中等';
+  const volLabel = volatilityVal > 0.05 ? 'Very high' : volatilityVal > 0.03 ? 'High' : volatilityVal > 0.01 ? 'Medium' : 'Low';
+  const liqLabel = totalDepth > 500 ? 'Very high' : totalDepth > 100 ? 'Ample' : totalDepth > 0 ? 'Moderate' : 'Waiting for order book';
+  const instLabel = whaleActivity > 55 || Math.abs(pct) > 5 ? 'Very high' : whaleActivity > 35 || Math.abs(pct) > 2 ? 'High' : 'Medium';
   const sentiment = clamp(Math.round((positionInRange * 55) + 45 + (imbalance * 20) + (funding * 10000)), 1, 99);
   const baseCorrelations: Record<string, number> = {
     'BTC/USDT': 1,
@@ -336,7 +336,7 @@ export function buildMarketRuntimeContext(
     fallback
   );
   const institutionalParticipation = currentVolume > 0 && volumeSMA > 0
-    ? currentVolume > volumeSMA * 1.5 ? '极高' : currentVolume > volumeSMA ? '高' : '一般'
+    ? currentVolume > volumeSMA * 1.5 ? 'Very high' : currentVolume > volumeSMA ? 'High' : 'Moderate'
     : microstructure.institutionalParticipation;
 
   return {

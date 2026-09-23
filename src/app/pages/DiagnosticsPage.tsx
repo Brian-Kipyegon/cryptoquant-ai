@@ -62,27 +62,27 @@ export function DiagnosticsPage({
 }) {
   return (
     <div className="space-y-6">
-      <SectionTitle title="策略诊断" subtitle="最近周期漏斗、阻断明细、影子持仓与平仓记录。" />
+      <SectionTitle title="Strategy diagnostics" subtitle="Latest cycle funnel, block details, shadow positions and closed trades." />
       <div className="grid gap-4 md:grid-cols-4">
         <MetricCard
-          label="最近周期"
+          label="Last cycle"
           value={abbreviateCycleId(diagnosticsCycles[0]?.cycleId)}
           valueTitle={diagnosticsCycles[0]?.cycleId || undefined}
           hint={formatDateTime(diagnosticsCycles[0]?.startedAt)}
         />
-        <MetricCard label="扫描标的" value={String(diagnosticsCycles[0]?.scannedSymbols || 0)} />
-        <MetricCard label="扫描目标" value={String(diagnosticsCycles[0]?.scannedTargets || 0)} />
-        <MetricCard label="耗时" value={`${diagnosticsCycles[0]?.durationMs || 0} ms`} />
+        <MetricCard label="Symbols scanned" value={String(diagnosticsCycles[0]?.scannedSymbols || 0)} />
+        <MetricCard label="Targets scanned" value={String(diagnosticsCycles[0]?.scannedTargets || 0)} />
+        <MetricCard label="Duration" value={`${diagnosticsCycles[0]?.durationMs || 0} ms`} />
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[1.5fr_420px]">
         <section className={cardClassName()}>
           <SectionTitle
-            title="阻断明细表"
+            title="Block details"
             action={
               <div className="flex flex-wrap items-center gap-2">
                 <div className="rounded-full border border-indigo-500/30 bg-indigo-500/10 px-3 py-1 text-xs text-indigo-200">
-                  默认每页 10 条
+                  10 per page
                 </div>
                 <input
                   type="date"
@@ -101,25 +101,25 @@ export function DiagnosticsPage({
                   }}
                   className="rounded-xl border border-zinc-700 px-3 py-1.5 text-sm text-zinc-200"
                 >
-                  全部日期
+                  All dates
                 </button>
               </div>
             }
           />
           <div className="overflow-hidden rounded-2xl border border-zinc-800">
             <div className="grid grid-cols-[150px_90px_70px_1fr_90px_90px_100px_140px] gap-3 border-b border-zinc-800 bg-zinc-950/80 px-4 py-3 text-xs uppercase tracking-wide text-zinc-500">
-              <span>时间</span>
-              <span>标的</span>
-              <span>周期</span>
-              <span>策略</span>
-              <span>信号</span>
-              <span>置信度</span>
-              <span>阻断阶段</span>
-              <span>原因</span>
+              <span>Time</span>
+              <span>Symbol</span>
+              <span>Timeframe</span>
+              <span>Strategy</span>
+              <span>Signal</span>
+              <span>Confidence</span>
+              <span>Blocked at</span>
+              <span>Reason</span>
             </div>
             <div className="max-h-[520px] overflow-y-auto">
               {visibleTraces.length === 0 ? (
-                <div className="px-4 py-8 text-center text-sm text-zinc-500">暂无诊断记录</div>
+                <div className="px-4 py-8 text-center text-sm text-zinc-500">No diagnostics yet</div>
               ) : (
                 visibleTraces.map((trace) => (
                   <button
@@ -146,7 +146,7 @@ export function DiagnosticsPage({
           </div>
 
           <div className="mt-4 flex items-center justify-between gap-4 text-sm text-zinc-400">
-            <div>共 {filteredTraces.length} 条，当前第 {Math.min(diagnosticsPage, tracePageCount)} / {tracePageCount} 页</div>
+            <div>{filteredTraces.length} records, page {Math.min(diagnosticsPage, tracePageCount)} of {tracePageCount}</div>
             <div className="flex gap-2">
               <button
                 type="button"
@@ -155,7 +155,7 @@ export function DiagnosticsPage({
                 className="inline-flex items-center gap-1 rounded-xl border border-zinc-700 px-3 py-1.5 text-zinc-200 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 <ChevronLeft className="h-4 w-4" />
-                上一页
+                Previous
               </button>
               <button
                 type="button"
@@ -163,7 +163,7 @@ export function DiagnosticsPage({
                 onClick={() => setDiagnosticsPage((current) => Math.min(tracePageCount, current + 1))}
                 className="inline-flex items-center gap-1 rounded-xl border border-zinc-700 px-3 py-1.5 text-zinc-200 disabled:cursor-not-allowed disabled:opacity-40"
               >
-                下一页
+                Next
                 <ChevronRight className="h-4 w-4" />
               </button>
             </div>
@@ -175,7 +175,7 @@ export function DiagnosticsPage({
             embedded ? "self-start" : "xl:sticky xl:top-6 self-start max-h-[calc(100vh-96px)] overflow-hidden"
           )}
         >
-          <SectionTitle title="步骤详情" />
+          <SectionTitle title="Step details" />
           {selectedTrace ? (
             <div
               className={clsx(
@@ -184,13 +184,13 @@ export function DiagnosticsPage({
               )}
             >
               <div className="rounded-2xl border border-zinc-800 bg-zinc-950/60 p-4">
-                <div className="text-sm text-zinc-400">交易上下文</div>
+                <div className="text-sm text-zinc-400">Trade context</div>
                 <div className="mt-2 space-y-1 text-sm text-zinc-200">
-                  <div>标的：{selectedTrace.symbol}</div>
-                  <div>周期：{selectedTrace.timeframe}</div>
-                  <div>策略：{selectedTrace.strategyId}</div>
-                  <div>阻断阶段：<span className="text-amber-300">{stageLabel(selectedTrace.blockedAt)}</span></div>
-                  <div>原因：{selectedTrace.blockedReason || "—"}</div>
+                  <div>Symbol: {selectedTrace.symbol}</div>
+                  <div>Timeframe: {selectedTrace.timeframe}</div>
+                  <div>Strategy: {selectedTrace.strategyId}</div>
+                  <div>Blocked at: <span className="text-amber-300">{stageLabel(selectedTrace.blockedAt)}</span></div>
+                  <div>Reason: {selectedTrace.blockedReason || "—"}</div>
                 </div>
               </div>
 
@@ -224,39 +224,39 @@ export function DiagnosticsPage({
             </div>
           ) : (
             <div className="rounded-2xl border border-zinc-800 bg-zinc-950/60 px-4 py-8 text-center text-sm text-zinc-500">
-              选择一条阻断记录以查看步骤详情。
+              Select a block record to see its steps.
             </div>
           )}
         </section>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3 xl:grid-cols-6">
-        <MetricCard label="开放持仓数" value={String(shadowSummary?.openCount || 0)} />
-        <MetricCard label="已平仓数" value={String(shadowSummary?.closedCount || 0)} />
-        <MetricCard label="当前浮盈亏" value={formatUsd(shadowSummary?.unrealizedPnl || 0, 3)} trend={(shadowSummary?.unrealizedPnl || 0) >= 0 ? "up" : "down"} />
-        <MetricCard label="已实现盈亏" value={formatUsd(shadowSummary?.realizedPnl || 0, 3)} trend={(shadowSummary?.realizedPnl || 0) >= 0 ? "up" : "down"} />
-        <MetricCard label="胜率" value={formatPrice(shadowSummary?.winRate || 0, 2) + "%"} />
-        <MetricCard label="估算单数" value={String(shadowSummary?.estimatedCount || 0)} />
+        <MetricCard label="Open positions" value={String(shadowSummary?.openCount || 0)} />
+        <MetricCard label="Closed trades" value={String(shadowSummary?.closedCount || 0)} />
+        <MetricCard label="Unrealized PnL" value={formatUsd(shadowSummary?.unrealizedPnl || 0, 3)} trend={(shadowSummary?.unrealizedPnl || 0) >= 0 ? "up" : "down"} />
+        <MetricCard label="Realized PnL" value={formatUsd(shadowSummary?.realizedPnl || 0, 3)} trend={(shadowSummary?.realizedPnl || 0) >= 0 ? "up" : "down"} />
+        <MetricCard label="Win rate" value={formatPrice(shadowSummary?.winRate || 0, 2) + "%"} />
+        <MetricCard label="Estimated orders" value={String(shadowSummary?.estimatedCount || 0)} />
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[1.5fr_420px]">
         <div className="space-y-6">
           <section className={cardClassName()}>
-            <SectionTitle title="影子持仓" />
+            <SectionTitle title="Shadow positions" />
             <div className="overflow-hidden rounded-2xl border border-zinc-800">
               <div className="grid grid-cols-[100px_70px_70px_100px_100px_100px_110px_90px] gap-3 border-b border-zinc-800 bg-zinc-950/80 px-4 py-3 text-xs uppercase tracking-wide text-zinc-500">
-                <span>标的</span>
-                <span>周期</span>
-                <span>方向</span>
-                <span>开仓价</span>
-                <span>标记价</span>
-                <span>止盈 / 止损</span>
-                <span>浮盈亏</span>
-                <span>来源</span>
+                <span>Symbol</span>
+                <span>Timeframe</span>
+                <span>Side</span>
+                <span>Entry price</span>
+                <span>Mark price</span>
+                <span>TP / SL</span>
+                <span>Unrealized PnL</span>
+                <span>Source</span>
               </div>
               <div className="max-h-[320px] overflow-y-auto">
                 {shadowOpenOrders.length === 0 ? (
-                  <div className="px-4 py-8 text-center text-sm text-zinc-500">暂无影子持仓</div>
+                  <div className="px-4 py-8 text-center text-sm text-zinc-500">No shadow positions</div>
                 ) : (
                   shadowOpenOrders.map((row) => (
                     <button
@@ -277,7 +277,7 @@ export function DiagnosticsPage({
                       <span className={clsx(Number(row.unrealized_pnl || 0) >= 0 ? "text-emerald-300" : "text-rose-300")}>
                         {formatUsd(row.unrealized_pnl, 3)}
                       </span>
-                      <span>{row.is_estimated ? "估算" : "实时"}</span>
+                      <span>{row.is_estimated ? "Estimated" : "Live"}</span>
                     </button>
                   ))
                 )}
@@ -286,21 +286,21 @@ export function DiagnosticsPage({
           </section>
 
           <section className={cardClassName()}>
-            <SectionTitle title="影子平仓记录" />
+            <SectionTitle title="Closed shadow trades" />
             <div className="overflow-hidden rounded-2xl border border-zinc-800">
               <div className="grid grid-cols-[100px_70px_70px_100px_100px_110px_110px_90px] gap-3 border-b border-zinc-800 bg-zinc-950/80 px-4 py-3 text-xs uppercase tracking-wide text-zinc-500">
-                <span>标的</span>
-                <span>周期</span>
-                <span>方向</span>
-                <span>开仓价</span>
-                <span>平仓价</span>
-                <span>已实现盈亏</span>
-                <span>退出原因</span>
-                <span>来源</span>
+                <span>Symbol</span>
+                <span>Timeframe</span>
+                <span>Side</span>
+                <span>Entry price</span>
+                <span>Exit price</span>
+                <span>Realized PnL</span>
+                <span>Exit reason</span>
+                <span>Source</span>
               </div>
               <div className="max-h-[320px] overflow-y-auto">
                 {shadowClosedOrders.length === 0 ? (
-                  <div className="px-4 py-8 text-center text-sm text-zinc-500">暂无影子平仓记录</div>
+                  <div className="px-4 py-8 text-center text-sm text-zinc-500">No closed shadow trades</div>
                 ) : (
                   shadowClosedOrders.map((row) => (
                     <button
@@ -321,7 +321,7 @@ export function DiagnosticsPage({
                         {formatUsd(row.realized_pnl, 3)}
                       </span>
                       <span>{exitReasonLabel(row.exit_reason)}</span>
-                      <span>{row.is_estimated ? "估算" : "实时"}</span>
+                      <span>{row.is_estimated ? "Estimated" : "Live"}</span>
                     </button>
                   ))
                 )}
@@ -335,7 +335,7 @@ export function DiagnosticsPage({
             embedded ? "self-start" : "xl:sticky xl:top-6 self-start max-h-[calc(100vh-96px)] overflow-hidden"
           )}
         >
-          <SectionTitle title="影子订单详情" />
+          <SectionTitle title="Shadow order details" />
           {selectedShadowOrder ? (
             <div
               className={clsx(
@@ -344,10 +344,10 @@ export function DiagnosticsPage({
               )}
             >
               <div className="grid gap-4 md:grid-cols-2">
-                <MetricCard label="理论价" value={formatPrice(selectedShadowOrder.theoretical_price, 2)} />
-                <MetricCard label="可成交价" value={formatPrice(selectedShadowOrder.executable_price, 2)} />
+                <MetricCard label="Theoretical price" value={formatPrice(selectedShadowOrder.theoretical_price, 2)} />
+                <MetricCard label="Executable price" value={formatPrice(selectedShadowOrder.executable_price, 2)} />
                 <MetricCard label="Spread" value={`${formatPrice(selectedShadowOrder.spread_bps, 2)} bps`} />
-                <MetricCard label="滑点" value={`${formatPrice(selectedShadowOrder.slippage_bps, 2)} bps`} />
+                <MetricCard label="Slippage" value={`${formatPrice(selectedShadowOrder.slippage_bps, 2)} bps`} />
               </div>
               <div className="rounded-2xl border border-zinc-800 bg-zinc-950/60 p-4">
                 <div className="mb-2 text-sm font-medium text-zinc-200">signal_json</div>
@@ -364,7 +364,7 @@ export function DiagnosticsPage({
             </div>
           ) : (
             <div className="rounded-2xl border border-zinc-800 bg-zinc-950/60 px-4 py-8 text-center text-sm text-zinc-500">
-              选择一条影子记录以查看详情。
+              Select a shadow record to see details.
             </div>
           )}
         </section>

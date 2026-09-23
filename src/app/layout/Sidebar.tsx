@@ -20,7 +20,7 @@ export function Sidebar({
         </div>
         <div>
           <div className="font-semibold text-zinc-50">CryptoQuantAI</div>
-          <div className="text-xs text-zinc-500">源码控制台</div>
+          <div className="text-xs text-zinc-500">Trading console</div>
         </div>
       </div>
 

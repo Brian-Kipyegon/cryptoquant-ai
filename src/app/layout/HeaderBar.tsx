@@ -41,7 +41,7 @@ export function HeaderBar({
             ))}
           </select>
           <div className="rounded-2xl border border-zinc-800 bg-zinc-900/70 px-4 py-2">
-            <div className="text-xs text-zinc-500">当前价格</div>
+            <div className="text-xs text-zinc-500">Price</div>
             <div className="text-lg font-semibold text-zinc-50">
               {formatPrice(selectedTicker?.last || 0, 2)}
             </div>
@@ -61,15 +61,15 @@ export function HeaderBar({
 
         <div className="flex flex-wrap items-center gap-3">
           <div className="rounded-2xl border border-zinc-800 bg-zinc-900/70 px-4 py-2">
-            <div className="text-xs text-zinc-500">自动交易</div>
+            <div className="text-xs text-zinc-500">Auto-trading</div>
             <div className="font-medium text-zinc-100">{autoStatus?.state || "stopped"}</div>
           </div>
           <div className="rounded-2xl border border-zinc-800 bg-zinc-900/70 px-4 py-2">
-            <div className="text-xs text-zinc-500">账户模式</div>
-            <div className="font-medium text-zinc-100">{autoConfig?.sandbox ? "OKX 模拟盘" : "OKX 实盘"}</div>
+            <div className="text-xs text-zinc-500">Account mode</div>
+            <div className="font-medium text-zinc-100">{autoConfig?.sandbox ? "OKX demo" : "OKX live"}</div>
           </div>
           <div className="rounded-2xl border border-zinc-800 bg-zinc-900/70 px-4 py-2">
-            <div className="text-xs text-zinc-500">当前用户</div>
+            <div className="text-xs text-zinc-500">User</div>
             <div className="font-medium text-zinc-100">{sessionUser.username}</div>
           </div>
           <button
@@ -84,7 +84,7 @@ export function HeaderBar({
             onClick={onLogout}
             className="rounded-2xl border border-zinc-700 px-4 py-2 text-sm text-zinc-200 transition hover:border-zinc-500 hover:text-white"
           >
-            退出
+            Sign out
           </button>
         </div>
       </div>

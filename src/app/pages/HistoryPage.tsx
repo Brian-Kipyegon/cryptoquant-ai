@@ -15,22 +15,22 @@ export function HistoryPage({
 }) {
   return (
     <div className="space-y-6">
-      <SectionTitle title="交易历史" subtitle="交易所订单历史和本地已平仓交易记录。" />
+      <SectionTitle title="Trade history" subtitle="Exchange order history and locally recorded closed trades." />
       <div className="grid gap-6 xl:grid-cols-2">
         <section className={cardClassName()}>
-          <SectionTitle title="交易所订单历史" />
+          <SectionTitle title="Exchange order history" />
           <div className="overflow-hidden rounded-2xl border border-zinc-800">
             <div className="grid grid-cols-[150px_90px_80px_90px_90px_90px] gap-3 border-b border-zinc-800 bg-zinc-950/80 px-4 py-3 text-xs uppercase tracking-wide text-zinc-500">
-              <span>时间</span>
-              <span>标的</span>
-              <span>方向</span>
-              <span>价格</span>
-              <span>数量</span>
-              <span>状态</span>
+              <span>Time</span>
+              <span>Symbol</span>
+              <span>Side</span>
+              <span>Price</span>
+              <span>Quantity</span>
+              <span>Status</span>
             </div>
             <div className="max-h-[480px] overflow-y-auto">
               {historyOrders.length === 0 ? (
-                <div className="px-4 py-8 text-center text-sm text-zinc-500">暂无订单历史</div>
+                <div className="px-4 py-8 text-center text-sm text-zinc-500">No order history</div>
               ) : (
                 historyOrders.slice(0, 80).map((row) => (
                   <div
@@ -51,19 +51,19 @@ export function HistoryPage({
         </section>
 
         <section className={cardClassName()}>
-          <SectionTitle title="本地交易记录" />
+          <SectionTitle title="Local trade records" />
           <div className="overflow-hidden rounded-2xl border border-zinc-800">
             <div className="grid grid-cols-[150px_90px_1fr_80px_100px_100px] gap-3 border-b border-zinc-800 bg-zinc-950/80 px-4 py-3 text-xs uppercase tracking-wide text-zinc-500">
-              <span>时间</span>
-              <span>标的</span>
-              <span>策略</span>
-              <span>方向</span>
+              <span>Time</span>
+              <span>Symbol</span>
+              <span>Strategy</span>
+              <span>Side</span>
               <span>PnL</span>
-              <span>退出原因</span>
+              <span>Exit reason</span>
             </div>
             <div className="max-h-[480px] overflow-y-auto">
               {localTrades.length === 0 ? (
-                <div className="px-4 py-8 text-center text-sm text-zinc-500">暂无本地交易记录</div>
+                <div className="px-4 py-8 text-center text-sm text-zinc-500">No local trade records</div>
               ) : (
                 localTrades.slice(0, 80).map((row) => (
                   <div
