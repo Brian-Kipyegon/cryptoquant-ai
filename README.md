@@ -11,7 +11,7 @@ CryptoQuant AI is a local-first quantitative cryptocurrency trading dashboard fo
 - Regime-based strategy engine with trend breakout, mean reversion, macro risk gating, TP/SL construction, and risk kill switch behavior.
 - Shadow trading, walk-forward backtesting, portfolio return analytics, execution diagnostics, reliability views, and audit trails.
 - Local SQLite and JSON persistence for trades, state, risk events, and research snapshots.
-- React dashboard with legacy embedded panels for existing operational workflows.
+- React dashboard for monitoring, backtesting, portfolio returns, diagnostics and audit trails.
 
 ## Prerequisites
 
