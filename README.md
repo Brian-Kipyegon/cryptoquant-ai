@@ -29,16 +29,10 @@ CryptoQuant AI is a local-first quantitative cryptocurrency trading dashboard fo
 git clone https://github.com/YOUR_GITHUB_USERNAME/cryptoquant-ai.git
 cd cryptoquant-ai
 npm ci
-copy .env.example .env
+npm run setup
 ```
 
-On macOS or Linux, use:
-
-```bash
-cp .env.example .env
-```
-
-Edit `.env` and replace every `YOUR_..._HERE` value with your own local credentials. Leave optional services blank if you do not use them.
+`npm run setup` checks your Node.js version and creates `.env` from `.env.example` if it doesn't exist yet. Edit `.env` and replace every `YOUR_..._HERE` value with your own local credentials. Leave optional services blank if you do not use them.
 
 ## Usage
 
@@ -54,12 +48,13 @@ Then open:
 http://localhost:3000
 ```
 
-Build for production:
+Build and run in production mode:
 
 ```bash
-npm run build
-npm run start:prod
+npm start
 ```
+
+This runs `npm run build` followed by `npm run start:prod`. Set `PORT` to listen on a port other than 3000, and `DATA_DIR` to keep runtime data somewhere other than `./data`.
 
 Run validation:
 
@@ -68,8 +63,6 @@ npm run lint
 npm test
 npm run build
 ```
-
-Windows users can also run `一键启动.bat` from the project root. The script checks Node/npm, installs dependencies, creates `.env` from `.env.example` when needed, runs type checks, and starts the app.
 
 ## Configuration
 

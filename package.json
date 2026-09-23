@@ -9,9 +9,11 @@
     "npm": ">=10.0.0"
   },
   "scripts": {
+    "setup": "node scripts/setup.mjs",
     "dev": "node scripts/run-server.mjs development",
     "build": "vite build",
     "start:prod": "node scripts/run-server.mjs production",
+    "start": "npm run build && npm run start:prod",
     "preview": "vite preview",
     "clean": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\"",
     "lint": "tsc --noEmit",
