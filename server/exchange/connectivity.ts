@@ -35,6 +35,9 @@ export type ExchangeConnectivityStatus = {
   lastCheckedAt: number | null;
   okxPublic: boolean | null;
   okxPrivate: boolean | null;
+  /** Reachability of the market data venue (DATA_EXCHANGE). */
+  marketData?: boolean | null;
+  marketDataExchange?: string | null;
   error: string | null;
   lastError: string | null;
   nextRetryAt: number | null;
@@ -73,6 +76,8 @@ export function getExchangeConnectivityStatus() {
     lastCheckedAt: null,
     okxPublic: null,
     okxPrivate: null,
+    marketData: null,
+    marketDataExchange: null,
     error: null,
     lastError: null,
     nextRetryAt: null,
@@ -94,7 +99,7 @@ export function updateExchangeConnectivityStatus(patch: Partial<ExchangeConnecti
   return lastExchangeConnectivityStatus;
 }
 
-export function markExchangeConnectivitySuccess(patch: Partial<Pick<ExchangeConnectivityStatus, "okxPublic" | "okxPrivate" | "proxy">> = {}) {
+export function markExchangeConnectivitySuccess(patch: Partial<Pick<ExchangeConnectivityStatus, "okxPublic" | "okxPrivate" | "marketData" | "marketDataExchange" | "proxy">> = {}) {
   return updateExchangeConnectivityStatus({
     ...patch,
     error: null,
@@ -104,7 +109,7 @@ export function markExchangeConnectivitySuccess(patch: Partial<Pick<ExchangeConn
   });
 }
 
-export function markExchangeConnectivityFailure(error: any, patch: Partial<Pick<ExchangeConnectivityStatus, "okxPublic" | "okxPrivate" | "proxy">> = {}) {
+export function markExchangeConnectivityFailure(error: any, patch: Partial<Pick<ExchangeConnectivityStatus, "okxPublic" | "okxPrivate" | "marketData" | "marketDataExchange" | "proxy">> = {}) {
   const previous = getExchangeConnectivityStatus();
   const message = formatExchangeConnectivityError(error);
   const consecutiveFailures = Math.max(1, Number(previous.consecutiveFailures || 0) + 1);

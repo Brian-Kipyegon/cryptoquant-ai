@@ -7,6 +7,8 @@ import { hasMeaningfulAutoTradingConfigInput } from "../persistence/trading-db";
 import { requestError } from "../http-errors";
 import { resolveEngineCredentials } from "./engine-helpers";
 import { runAutoTradingCycle } from "./auto-trading-cycle";
+import { getMarketDataProvider } from "../market/providers";
+import { assertMarketDataReady } from "../market/public-data";
 
 export class AutoTradingEngine {
   private timer: NodeJS.Timeout | null = null;
@@ -83,12 +85,14 @@ export class AutoTradingEngine {
     );
     if (!config) throw requestError(400, "Invalid auto-trading config", { error: "Invalid auto-trading config" });
     const credentials = resolveEngineCredentials(config.sandbox);
-    if (!credentials) {
+    // Shadow mode can run on market data alone (paper balance); live mode needs an OKX account.
+    if (!credentials && !config.shadowMode) {
       throw requestError(400, `Missing OKX credentials for ${config.sandbox ? "demo" : "live"} mode`, {
         error: `Missing OKX credentials for ${config.sandbox ? "demo" : "live"} mode`
       });
     }
-    await assertAutoTradingExchangeReady(credentials, config.sandbox);
+    if (credentials) await assertAutoTradingExchangeReady(credentials, config.sandbox);
+    if (!credentials || getMarketDataProvider().id !== "okx") await assertMarketDataReady();
 
     this.stopRequested = false;
     if (this.timer) {
@@ -139,12 +143,14 @@ export class AutoTradingEngine {
     if (!config) throw requestError(400, "Auto-trading config is not initialized", { error: "Auto-trading config is not initialized" });
     if (this.inFlight) throw requestError(409, "Auto-trading cycle already in progress", { error: "Auto-trading cycle already in progress" });
     const credentials = resolveEngineCredentials(config.sandbox);
-    if (!credentials) {
+    // Shadow mode can run on market data alone (paper balance); live mode needs an OKX account.
+    if (!credentials && !config.shadowMode) {
       throw requestError(400, `Missing OKX credentials for ${config.sandbox ? "demo" : "live"} mode`, {
         error: `Missing OKX credentials for ${config.sandbox ? "demo" : "live"} mode`
       });
     }
-    await assertAutoTradingExchangeReady(credentials, config.sandbox);
+    if (credentials) await assertAutoTradingExchangeReady(credentials, config.sandbox);
+    if (!credentials || getMarketDataProvider().id !== "okx") await assertMarketDataReady();
 
     if (providedConfig) {
       updateAutoTradingStore({ config });

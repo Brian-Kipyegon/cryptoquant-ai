@@ -335,6 +335,20 @@ export function recordTrade(row: any) {
   return payload;
 }
 
+/** Days of strategy signal rows to keep (STRATEGY_SIGNAL_RETENTION_DAYS, default 14). */
+export function getStrategySignalRetentionDays() {
+  const days = Number(process.env.STRATEGY_SIGNAL_RETENTION_DAYS);
+  return Number.isFinite(days) && days > 0 ? days : 14;
+}
+
+/** Deletes strategy signal rows older than the retention window. Returns rows removed. */
+export function pruneStrategySignals(now = Date.now()) {
+  if (!tradingDb) return 0;
+  const cutoff = now - getStrategySignalRetentionDays() * 86_400_000;
+  const result = tradingDb.prepare("DELETE FROM strategy_signals WHERE created_at < ?").run(cutoff);
+  return Number(result?.changes || 0);
+}
+
 export function recordStrategySignal(row: any) {
   if (!tradingDb) return null;
   const now = Date.now();

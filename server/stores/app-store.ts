@@ -219,8 +219,25 @@ export async function loadAppStore() {
   }
 }
 
-export async function persistAppStore() {
-  await writeFileAtomic(APP_STORE_FILE, JSON.stringify(appStore, null, 2), { mode: 0o600 });
+let appStorePersistQueued: Promise<void> | null = null;
+let appStorePersistRunning: Promise<void> = Promise.resolve();
+
+/**
+ * Writes the store to disk. Calls made while a write is queued share it, and the
+ * JSON is built when the write starts, so it always includes the latest state.
+ * (A scan can push hundreds of decision traces; each used to rewrite the file.)
+ */
+export function persistAppStore(): Promise<void> {
+  if (appStorePersistQueued) return appStorePersistQueued;
+  const queued = appStorePersistRunning
+    .catch(() => undefined)
+    .then(() => {
+      appStorePersistQueued = null;
+      return writeFileAtomic(APP_STORE_FILE, JSON.stringify(appStore, null, 2), { mode: 0o600 });
+    });
+  appStorePersistQueued = queued;
+  appStorePersistRunning = queued;
+  return queued;
 }
 
 export const AUTO_TRADING_LOG_LIMIT = 200;

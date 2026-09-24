@@ -1,6 +1,6 @@
 import { normalizeDisplaySymbol } from "../../src/lib/tradingRuntime";
 import { cachedPublicMarket } from "../utils";
-import { withAutoTradingDataRetry } from "../exchange/connectivity";
+import { markExchangeConnectivityFailure, markExchangeConnectivitySuccess, withAutoTradingDataRetry } from "../exchange/connectivity";
 import { getMarketDataProvider, getOkxMarketDataProvider } from "./providers";
 
 // Market data for scanning, charts and shadow execution comes from the active
@@ -59,4 +59,20 @@ export async function fetchOkxExecutionTickerSnapshot(symbol: string) {
   const provider = getOkxMarketDataProvider();
   const displaySymbol = normalizeDisplaySymbol(symbol);
   return cachedPublicMarket(`okx:ticker:${displaySymbol}`, 3000, () => provider.ticker(displaySymbol));
+}
+
+/** Throws a 503 request error when the market data venue can't be reached. */
+export async function assertMarketDataReady() {
+  const provider = getMarketDataProvider();
+  try {
+    await withAutoTradingDataRetry(`${provider.label} market data preflight`, () => provider.ping());
+    markExchangeConnectivitySuccess({ marketData: true, marketDataExchange: provider.label });
+  } catch (error: any) {
+    markExchangeConnectivityFailure(error, { marketData: false, marketDataExchange: provider.label });
+    const message = `${provider.label} market data is not reachable before auto-trading start: ${error?.message || String(error)}`;
+    throw Object.assign(new Error(message), {
+      statusCode: 503,
+      payload: { error: message, code: "MARKET_DATA_UNREACHABLE" },
+    });
+  }
 }
