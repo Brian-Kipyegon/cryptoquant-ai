@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { AutoTradingCycleSummary, AutoTradingTrace, ShadowOrder, ShadowSummary } from "../api";
 import { MetricCard, SectionTitle } from "../components/common";
 import {
+  abbreviateCycleId,
   cardClassName,
   exitReasonLabel,
   formatDateTime,
@@ -14,12 +15,6 @@ import {
   stageLabel,
 } from "../utils";
 
-function abbreviateCycleId(value?: string | null) {
-  const text = String(value || "").trim();
-  if (!text) return "—";
-  if (text.length <= 20) return text;
-  return `${text.slice(0, 8)}...${text.slice(-8)}`;
-}
 
 export function DiagnosticsPage({
   diagnosticsCycles,

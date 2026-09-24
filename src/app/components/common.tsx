@@ -38,10 +38,10 @@ export function MetricCard({
   trend?: "up" | "down" | "neutral";
 }) {
   return (
-    <div className={cardClassName("p-4")}>
+    <div className={cardClassName("min-w-0 p-4")}>
       <div className="text-sm text-zinc-400">{label}</div>
       <div
-        className={clsx("mt-3 text-2xl font-semibold", {
+        className={clsx("mt-3 truncate text-2xl font-semibold", {
           "text-emerald-400": trend === "up",
           "text-rose-400": trend === "down",
           "text-zinc-50": !trend || trend === "neutral",

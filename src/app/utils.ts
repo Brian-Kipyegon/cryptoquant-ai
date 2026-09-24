@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 
 import type { AppPage, AutoTradingConfig, MacroResponse, ResearchStat, RiskState } from "./api";
+import { DEFAULT_UNIVERSE_CONFIG } from "../lib/universe";
 import {
   AUTO_TRADING_ALLOWED_SYMBOLS,
   DEFAULT_AUTO_TRADING_RISK_CONFIG,
@@ -236,6 +237,7 @@ export function mergeConfig(
     sandbox: false,
     scanProfilesVersion: 2,
     scanProfiles: DEFAULT_SCAN_PROFILES,
+    universe: DEFAULT_UNIVERSE_CONFIG,
     strategyIds: DEFAULT_STRATEGIES,
     riskConfigSnapshot: DEFAULT_AUTO_TRADING_RISK_CONFIG,
     shadowMode: DEFAULT_AUTO_TRADING_RISK_CONFIG.shadowMode,
@@ -246,6 +248,7 @@ export function mergeConfig(
     ...patch,
     scanProfilesVersion: patch.scanProfilesVersion ?? base.scanProfilesVersion ?? 2,
     scanProfiles: patch.scanProfiles ?? base.scanProfiles,
+    universe: patch.universe ?? base.universe,
     strategyIds: patch.strategyIds ?? base.strategyIds,
     riskConfigSnapshot: {
       ...base.riskConfigSnapshot,
@@ -253,6 +256,21 @@ export function mergeConfig(
     },
     shadowMode: patch.shadowMode ?? base.shadowMode,
   };
+}
+
+/** Header symbol choices: pairs with tickers (most liquid first), the defaults, and the current selection. */
+export function abbreviateCycleId(value?: string | null) {
+  const text = String(value || "").trim();
+  if (!text) return "—";
+  if (text.length <= 20) return text;
+  return `${text.slice(0, 8)}...${text.slice(-8)}`;
+}
+
+export function buildSymbolOptions(tickers: Record<string, unknown> | null | undefined, selected: string) {
+  const ranked = Object.entries(tickers || {})
+    .sort(([, left], [, right]) => Number((right as any)?.quoteVolume || 0) - Number((left as any)?.quoteVolume || 0))
+    .map(([symbol]) => symbol);
+  return Array.from(new Set([...ranked, ...AUTO_TRADING_ALLOWED_SYMBOLS, selected].filter(Boolean)));
 }
 
 export function profilesToDraft(config: AutoTradingConfig | null): ScanProfileDraft[] {

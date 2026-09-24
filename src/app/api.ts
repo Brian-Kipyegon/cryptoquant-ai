@@ -1,4 +1,5 @@
 import type { AutoTradingRiskConfig, MarketAnalysisState, OrderBook, Ticker } from "../lib/tradingRuntime";
+import type { UniverseConfig } from "../lib/universe";
 export type {
   PortfolioReturnAnalytics,
   PortfolioReturnBillInput,
@@ -58,6 +59,7 @@ export type AutoTradingConfig = {
   sandbox: boolean;
   scanProfilesVersion?: number;
   scanProfiles: AutoTradingScanProfile[];
+  universe?: UniverseConfig;
   strategyIds: string[];
   riskConfigSnapshot: AutoTradingRiskConfig;
   shadowMode: boolean;
@@ -79,6 +81,8 @@ export type AutoTradingStatus = {
     lastCheckedAt: number | null;
     okxPublic: boolean | null;
     okxPrivate: boolean | null;
+    marketData?: boolean | null;
+    marketDataExchange?: string | null;
     error: string | null;
     lastError: string | null;
     nextRetryAt: number | null;

@@ -3,10 +3,11 @@ import clsx from "clsx";
 import { RefreshCw } from "lucide-react";
 
 import type { AutoTradingConfig, AutoTradingStatus, SessionUser } from "../api";
-import { AUTO_TRADING_ALLOWED_SYMBOLS, type Ticker } from "../../lib/tradingRuntime";
+import type { Ticker } from "../../lib/tradingRuntime";
 import { formatPct, formatPrice } from "../utils";
 
 export function HeaderBar({
+  symbols,
   selectedSymbol,
   onSelectSymbol,
   selectedTicker,
@@ -16,6 +17,8 @@ export function HeaderBar({
   onRefresh,
   onLogout,
 }: {
+  /** Pairs to offer: scan profiles and universe, most liquid first. */
+  symbols: string[];
   selectedSymbol: string;
   onSelectSymbol: (symbol: string) => void;
   selectedTicker: Ticker | null;
@@ -34,7 +37,7 @@ export function HeaderBar({
             onChange={(event) => onSelectSymbol(event.target.value)}
             className="rounded-2xl border border-zinc-700 bg-zinc-950 px-4 py-2 text-sm text-zinc-100 outline-none focus:border-indigo-500"
           >
-            {AUTO_TRADING_ALLOWED_SYMBOLS.map((symbol) => (
+            {symbols.map((symbol) => (
               <option key={symbol} value={symbol}>
                 {symbol}
               </option>
