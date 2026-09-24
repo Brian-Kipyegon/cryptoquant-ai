@@ -123,3 +123,16 @@ describe("auto-trading config", () => {
     expect(sanitizeAutoTradingConfig({ ...base, scanProfiles: [], universe: { enabled: false } } as any)).toBeNull();
   });
 });
+
+describe("environment credentials", () => {
+  it("ignores unfilled .env.example placeholders", async () => {
+    const { envText, getOkxEnvCredentials } = await import("../auth/credentials");
+    const saved = { key: process.env.OKX_API_KEY, other: process.env.CQ_TEST_VALUE };
+    process.env.OKX_API_KEY = "YOUR_OKX_API_KEY_HERE";
+    process.env.CQ_TEST_VALUE = "  real-value ";
+    expect(getOkxEnvCredentials(false).apiKey).toBeUndefined();
+    expect(envText("CQ_TEST_VALUE")).toBe("real-value");
+    process.env.OKX_API_KEY = saved.key ?? "";
+    if (saved.other === undefined) delete process.env.CQ_TEST_VALUE;
+  });
+});

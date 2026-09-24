@@ -43,10 +43,16 @@ export function hasAiCredentials(credentials?: AiProxyCredentials) {
   return !!(hasText(credentials?.proxyUrl) && hasText(credentials?.proxyKey));
 }
 
+/** True for the unfilled YOUR_..._HERE values shipped in .env.example. */
+export function isEnvPlaceholder(value: string) {
+  return /^YOUR_[A-Z0-9_]+_HERE$/.test(value.trim());
+}
+
 export function envText(...names: string[]) {
   for (const name of names) {
     const value = process.env[name];
-    if (hasText(value)) return value.trim();
+    // An unedited .env.example must not look like configured credentials.
+    if (hasText(value) && !isEnvPlaceholder(value)) return value.trim();
   }
   return undefined;
 }
