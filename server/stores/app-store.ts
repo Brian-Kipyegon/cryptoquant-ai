@@ -1,9 +1,10 @@
+import { isExcludedBase, sanitizeUniverseConfig } from "../../src/lib/universe";
 import express from "express";
 import path from "path";
 import fs from "fs";
 import fsp from "fs/promises";
 import crypto from "crypto";
-import { AUTO_TRADING_ALLOWED_SYMBOLS, AUTO_TRADING_ALLOWED_TIMEFRAMES, DEFAULT_AUTO_TRADING_RISK_CONFIG, normalizeDisplaySymbol, type AutoTradingRiskConfig } from "../../src/lib/tradingRuntime";
+import { AUTO_TRADING_ALLOWED_TIMEFRAMES, DEFAULT_AUTO_TRADING_RISK_CONFIG, normalizeDisplaySymbol, type AutoTradingRiskConfig } from "../../src/lib/tradingRuntime";
 import { APP_STORE_FILE, DATA_DIR } from "../config";
 import { AutoTradingConfig, AutoTradingCycleSummary, AutoTradingDecisionTrace, AutoTradingScanProfile, AutoTradingStore, OperatorSession, OrderLifecycleEvent, PersistentRiskState, SecurityEvent } from "../types";
 import { getAdminPassword } from "../auth/session";
@@ -253,8 +254,13 @@ export const DEFAULT_TIMEFRAME_BY_SYMBOL = new Map(
   DEFAULT_AUTO_TRADING_SCAN_PROFILES.map((profile) => [profile.symbol, profile.timeframes[0] || "1h"])
 );
 
+/** Any USDT spot pair that isn't a stablecoin, fiat, wrapped or leveraged token. */
+export function isScannableSymbol(symbol: string) {
+  const match = /^([A-Z0-9]{2,20})\/USDT$/.exec(symbol);
+  return Boolean(match) && !isExcludedBase(match![1]);
+}
+
 export function normalizeScanProfiles(input: any): AutoTradingScanProfile[] {
-  const allowedSymbols = new Set<string>(AUTO_TRADING_ALLOWED_SYMBOLS as readonly string[]);
   const allowedTimeframes = new Set<string>(AUTO_TRADING_ALLOWED_TIMEFRAMES as readonly string[]);
   const sourceProfiles = shouldMigrateLegacyScanProfiles(input)
     ? DEFAULT_AUTO_TRADING_SCAN_PROFILES
@@ -265,7 +271,7 @@ export function normalizeScanProfiles(input: any): AutoTradingScanProfile[] {
   const normalized = new Map<string, Set<string>>();
   for (const profile of sourceProfiles) {
     const symbol = normalizeDisplaySymbol(profile?.symbol || "");
-    if (!allowedSymbols.has(symbol)) continue;
+    if (!isScannableSymbol(symbol)) continue;
     const timeframes = Array.isArray(profile?.timeframes) ? profile.timeframes : [];
     const validTimeframes = timeframes
       .map((value) => String(value || "").trim())
@@ -346,14 +352,22 @@ export function sanitizeAutoTradingConfig(input: Partial<AutoTradingConfig> | nu
   const normalizedStrategies = Array.from(new Set((Array.isArray(input.strategyIds) ? input.strategyIds : [])
     .map(value => String(value || "").trim())
     .filter(Boolean)));
-  if (normalizedScanProfiles.length === 0 || normalizedStrategies.length === 0) return null;
+  const shadowMode = input.shadowMode ?? input.riskConfigSnapshot?.shadowMode ?? DEFAULT_AUTO_TRADING_RISK_CONFIG.shadowMode;
+  // Configs saved before the universe existed only get it automatically in shadow
+  // mode; live trading has to opt in to scanning more pairs.
+  const universe = sanitizeUniverseConfig(
+    input.universe ?? { enabled: Boolean(shadowMode) }
+  );
+  // Scanning needs at least one target: manual profiles or the universe.
+  if ((normalizedScanProfiles.length === 0 && !universe.enabled) || normalizedStrategies.length === 0) return null;
   return {
     sandbox: Boolean(input.sandbox),
     scanProfilesVersion: AUTO_TRADING_SCAN_PROFILES_VERSION,
     scanProfiles: normalizedScanProfiles,
+    universe,
     strategyIds: normalizedStrategies,
     riskConfigSnapshot: sanitizeAutoTradingRiskConfig(input.riskConfigSnapshot),
-    shadowMode: input.shadowMode ?? input.riskConfigSnapshot?.shadowMode ?? DEFAULT_AUTO_TRADING_RISK_CONFIG.shadowMode,
+    shadowMode,
   };
 }
 

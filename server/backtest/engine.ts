@@ -3,8 +3,8 @@ import { evaluateMacroGate, runStrategyAnalysis as evaluateStrategy } from "../.
 import { calculateOhlcvStartSince, nextOhlcvSince, normalizeOhlcvHistory } from "../../src/lib/ohlcvHistory";
 import { buildHigherTimeframeTrend, calculateRiskSizedQuantity, categorizeNoEntryReason, createBacktestDiagnostics, normalizeRiskPerTradePct } from "../../src/lib/backtestValidation";
 import { cachedPublicMarket } from "../utils";
-import { prepareExchange, publicExchange, runWithExchangeProxyFallback } from "../exchange/connectivity";
-import { toCcxtSymbol } from "../exchange/okx";
+import { getMarketDataProvider } from "../market/providers";
+import { normalizeDisplaySymbol } from "../../src/lib/tradingRuntime";
 
 export type BacktestRunOptions = {
   symbol: string;
@@ -432,11 +432,11 @@ export function runBacktestOnOhlcv(ohlcv: any[], options: BacktestRunOptions) {
 }
 
 export async function fetchBacktestOhlcv(symbol: string, timeframe: string, limit: number) {
-  await prepareExchange(publicExchange);
-  const ccxtSymbol = toCcxtSymbol(symbol);
+  const provider = getMarketDataProvider();
+  const displaySymbol = normalizeDisplaySymbol(symbol);
   const targetLimit = Math.min(10000, Math.max(60, Math.floor(Number(limit) || 60)));
   const pageLimit = Math.min(300, targetLimit);
-  const cacheKey = `backtest-ohlcv:${ccxtSymbol}:${timeframe}:${targetLimit}`;
+  const cacheKey = `${provider.id}:backtest-ohlcv:${displaySymbol}:${timeframe}:${targetLimit}`;
 
   return cachedPublicMarket(cacheKey, 60000, async () => {
     const batches: any[][] = [];
@@ -444,10 +444,7 @@ export async function fetchBacktestOhlcv(symbol: string, timeframe: string, limi
     const maxPages = Math.ceil(targetLimit / pageLimit) + 8;
 
     for (let page = 0; page < maxPages; page += 1) {
-      const batch = await runWithExchangeProxyFallback(
-        publicExchange,
-        () => publicExchange.fetchOHLCV(ccxtSymbol, timeframe, since, pageLimit)
-      );
+      const batch = await provider.ohlcvPage(displaySymbol, timeframe, since, pageLimit);
       if (!Array.isArray(batch) || batch.length === 0) break;
 
       batches.push(batch);
