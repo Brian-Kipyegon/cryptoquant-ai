@@ -3,8 +3,9 @@ import { Activity, Play, Square } from "lucide-react";
 
 import type { AutoTradingConfig, AutoTradingStatus, BalanceResponse, PositionRow, RealizedPnlResponse } from "../api";
 import { ScanProfilesPanel } from "../components/ScanProfilesPanel";
+import type { UniverseConfig } from "../../lib/universe";
 import { MetricCard, PageLoading, SectionTitle } from "../components/common";
-import { cardClassName, formatDateTime, formatUsd } from "../utils";
+import { abbreviateCycleId, cardClassName, formatDateTime, formatUsd } from "../utils";
 
 const DashboardPriceChart = React.lazy(() =>
   import("../components/DashboardPriceChart").then((module) => ({ default: module.DashboardPriceChart }))
@@ -59,8 +60,10 @@ export function DashboardPage({
   setChartTimeframe: React.Dispatch<React.SetStateAction<"15m" | "1h">>;
   chartData: Array<{ time: string; price: number; volume: number }>;
   scanProfilesSaving: boolean;
-  handleSaveScanProfiles: (profiles: AutoTradingConfig["scanProfiles"]) => Promise<void>;
+  handleSaveScanProfiles: (profiles: AutoTradingConfig["scanProfiles"], universe?: UniverseConfig) => Promise<void>;
 }) {
+  // Before the first preflight only the OKX probe may have run; fall back to it.
+  const marketDataStatus = autoStatus?.exchangeConnectivity?.marketData ?? autoStatus?.exchangeConnectivity?.okxPublic ?? null;
   return (
     <div className="space-y-6">
       <SectionTitle title="Dashboard" subtitle="Account summary, run controls and auto-trading scan profiles." />
@@ -99,9 +102,9 @@ export function DashboardPage({
             </div>
           ) : null}
           <div className="mb-5 grid gap-3 md:grid-cols-3">
-            <div className={`rounded-2xl border px-4 py-3 text-sm ${connectionClassName(autoStatus?.exchangeConnectivity?.okxPublic)}`}>
-              <div className="text-xs text-zinc-400">OKX public API</div>
-              <div className="mt-1 font-medium">{connectionLabel(autoStatus?.exchangeConnectivity?.okxPublic)}</div>
+            <div className={`rounded-2xl border px-4 py-3 text-sm ${connectionClassName(marketDataStatus)}`}>
+              <div className="text-xs text-zinc-400">Market data ({autoStatus?.exchangeConnectivity?.marketDataExchange || "exchange"})</div>
+              <div className="mt-1 font-medium">{connectionLabel(marketDataStatus)}</div>
             </div>
             <div className={`rounded-2xl border px-4 py-3 text-sm ${connectionClassName(autoStatus?.exchangeConnectivity?.okxPrivate)}`}>
               <div className="text-xs text-zinc-400">OKX private account</div>
@@ -118,7 +121,7 @@ export function DashboardPage({
           </div>
           {autoStatus?.exchangeConnectivity?.nextRetryAt ? (
             <div className="mb-4 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm leading-6 text-amber-100">
-              Reconnecting to OKX data automatically: {formatRetryDistance(autoStatus.exchangeConnectivity.nextRetryAt)}
+              Reconnecting to exchange data automatically: {formatRetryDistance(autoStatus.exchangeConnectivity.nextRetryAt)}
               {autoStatus.exchangeConnectivity.consecutiveFailures ? `, ${autoStatus.exchangeConnectivity.consecutiveFailures} consecutive failures` : ""}
               {autoStatus.exchangeConnectivity.lastError ? `. Last error: ${autoStatus.exchangeConnectivity.lastError}` : ""}
             </div>
@@ -158,7 +161,8 @@ export function DashboardPage({
             <MetricCard label="Trigger threshold" value={`${autoConfig?.riskConfigSnapshot.autoTradeThreshold ?? 0}%`} />
             <MetricCard
               label="Last cycle"
-              value={autoStatus?.recentCycleSummary?.cycleId || "—"}
+              value={abbreviateCycleId(autoStatus?.recentCycleSummary?.cycleId)}
+              valueTitle={autoStatus?.recentCycleSummary?.cycleId || undefined}
               hint={autoStatus?.recentCycleSummary ? formatDateTime(autoStatus.recentCycleSummary.completedAt) : undefined}
             />
           </div>

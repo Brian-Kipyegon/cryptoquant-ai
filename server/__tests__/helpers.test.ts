@@ -3,7 +3,7 @@ import { ceilToStep, normalizeOkxOrderStatus, okxBar, toCcxtLikeSwapSymbol, toCc
 import { calculateShadowPnl, timeframeToMs } from "../persistence/trading-db";
 import { floorToStep, normalizeNumber } from "../utils";
 import { nextAutoTradingDelay } from "../trading/auto-trading-cycle";
-import { AUTO_TRADING_MAX_DELAY_MS, AUTO_TRADING_MIN_DELAY_MS, sanitizeAutoTradingLogEntry } from "../stores/app-store";
+import { AUTO_TRADING_MAX_DELAY_MS, AUTO_TRADING_MIN_DELAY_MS, sanitizeAutoTradingConfig, sanitizeAutoTradingLogEntry } from "../stores/app-store";
 
 describe("symbol conversion", () => {
   it("converts display symbols to CCXT swap symbols", () => {
@@ -93,5 +93,46 @@ describe("auto-trading log sanitizer", () => {
       .toBe("[12:00:00] Scan started (manual, ALLOW)");
     expect(sanitizeAutoTradingLogEntry("[12:00:00] \u8930\u535e\u74d9\u93b8\u4f77\u7ca8\u5bb8\u63d2\u5f3d\u93b5?BTC/USDT trend\u951b\u5c7c\u7b02\u7ed7\u65c2\u6ce9\u6d5c?1.00 USDT"))
       .toBe("[12:00:00] Shadow position reversed BTC/USDT trend, previous PnL 1.00 USDT");
+  });
+});
+
+describe("auto-trading config", () => {
+  const base = { strategyIds: ["trend-breakout"], scanProfiles: [{ symbol: "BTC/USDT", timeframes: ["1h"] }], scanProfilesVersion: 2 };
+
+  it("accepts any liquid-looking USDT pair in scan profiles", () => {
+    const config = sanitizeAutoTradingConfig({
+      ...base,
+      scanProfiles: [
+        { symbol: "avax-usdt", timeframes: ["15m"] },
+        { symbol: "USDC/USDT", timeframes: ["1h"] },
+        { symbol: "BTC/EUR", timeframes: ["1h"] },
+      ],
+    } as any);
+    expect(config?.scanProfiles).toEqual([{ symbol: "AVAX/USDT", timeframes: ["15m"] }]);
+  });
+
+  it("enables the universe for saved shadow-mode configs but not for live ones", () => {
+    expect(sanitizeAutoTradingConfig({ ...base, shadowMode: true } as any)?.universe.enabled).toBe(true);
+    expect(sanitizeAutoTradingConfig({ ...base, shadowMode: false } as any)?.universe.enabled).toBe(false);
+    expect(sanitizeAutoTradingConfig({ ...base, shadowMode: false, universe: { enabled: true, size: 20 } } as any)?.universe)
+      .toMatchObject({ enabled: true, size: 20 });
+  });
+
+  it("allows universe-only scanning but rejects a config with nothing to scan", () => {
+    expect(sanitizeAutoTradingConfig({ ...base, scanProfiles: [], shadowMode: true } as any)?.scanProfiles).toEqual([]);
+    expect(sanitizeAutoTradingConfig({ ...base, scanProfiles: [], universe: { enabled: false } } as any)).toBeNull();
+  });
+});
+
+describe("environment credentials", () => {
+  it("ignores unfilled .env.example placeholders", async () => {
+    const { envText, getOkxEnvCredentials } = await import("../auth/credentials");
+    const saved = { key: process.env.OKX_API_KEY, other: process.env.CQ_TEST_VALUE };
+    process.env.OKX_API_KEY = "YOUR_OKX_API_KEY_HERE";
+    process.env.CQ_TEST_VALUE = "  real-value ";
+    expect(getOkxEnvCredentials(false).apiKey).toBeUndefined();
+    expect(envText("CQ_TEST_VALUE")).toBe("real-value");
+    process.env.OKX_API_KEY = saved.key ?? "";
+    if (saved.other === undefined) delete process.env.CQ_TEST_VALUE;
   });
 });

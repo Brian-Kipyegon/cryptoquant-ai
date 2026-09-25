@@ -1,12 +1,22 @@
 # CryptoQuant AI
 
-CryptoQuant AI is a local-first quantitative cryptocurrency trading dashboard for research, monitoring, backtesting, and optional OKX execution. It combines a React/Vite frontend with an Express/TypeScript backend, local SQLite persistence, OKX market/account integrations, Zhipu GLM-assisted summaries, and risk controls for strategy evaluation.
+CryptoQuant AI is a local-first quantitative cryptocurrency trading dashboard for research, monitoring, backtesting, and optional OKX execution. It combines a React/Vite frontend with an Express/TypeScript backend, local SQLite persistence, Binance market data (OKX optional), OKX account integration, Zhipu GLM-assisted summaries, and risk controls for strategy evaluation.
 
 > This project is for research and personal operations. It is not financial advice. Use demo trading first, keep API permissions limited, and never expose this service directly to the public internet without proper hardening.
 
+## Documentation
+
+- [Architecture](docs/architecture.md): how the system is put together and where it is heading.
+- [Running guide](docs/running.md): setup, configuration, Docker, using the dashboard, troubleshooting.
+- [Roadmap](docs/roadmap.md): the phased build plan and current status.
+- [CLAUDE.md](CLAUDE.md): guidance for AI coding agents working in this repo.
+
 ## Features
 
-- OKX market data, account balance, positions, order history, and order submission support.
+- Market data from Binance by default (public endpoints, no API key), or Binance.US / OKX via `DATA_EXCHANGE`.
+- Scans the most liquid USDT pairs (default top 100 by 24h volume, excluding stablecoins, fiat, wrapped and leveraged tokens) in addition to manually chosen pairs.
+- Shadow (paper) trading works without an exchange account, sized against a configurable paper balance.
+- OKX account balance, positions, order history, and order submission support.
 - Demo and live OKX credential paths with a local encrypted credential store.
 - Regime-based strategy engine with trend breakout, mean reversion, macro risk gating, TP/SL construction, and risk kill switch behavior.
 - Shadow trading, walk-forward backtesting, portfolio return analytics, execution diagnostics, reliability views, and audit trails.
@@ -21,7 +31,7 @@ CryptoQuant AI is a local-first quantitative cryptocurrency trading dashboard fo
 - Optional OKX API credentials for live or demo trading.
 - Optional Zhipu GLM API key for AI-assisted summaries.
 - Optional FRED API key for macro data.
-- Optional local HTTP/SOCKS proxy if your network cannot reach OKX directly.
+- Optional local HTTP/SOCKS proxy if your network cannot reach the exchanges directly.
 
 ## Installation
 
@@ -84,10 +94,19 @@ The app reads configuration from `.env`. Important variables include:
 - `APP_SECRET` for local encrypted credential storage.
 - `OKX_API_KEY`, `OKX_SECRET_KEY`, `OKX_PASSPHRASE` for OKX live mode.
 - `OKX_DEMO_API_KEY`, `OKX_DEMO_SECRET_KEY`, `OKX_DEMO_PASSPHRASE` for OKX demo mode.
+- `DATA_EXCHANGE` for the market data source: `binance` (default), `binanceus` (use this from the US; binance.com blocks US IPs) or `okx`.
+- `SHADOW_PAPER_EQUITY_USDT` for the paper balance used in shadow mode when no OKX account is configured (default 10000).
+- `STRATEGY_SIGNAL_RETENTION_DAYS` for how long strategy signal rows are kept (default 14).
 - `EXCHANGE_PROXY_URL` for optional proxy routing, for example `http://127.0.0.1:10808`.
 - `ZHIPU_API_KEY` and model settings for AI-assisted summaries.
 - `FRED_API_KEY` for macro data.
 - `SMTP_USER`, `SMTP_PASS`, `SMTP_TO` for optional email notifications.
+
+### Market data and the scan universe
+
+Charts, scanning, shadow fills and backtests use the `DATA_EXCHANGE` venue. Every auto-trading cycle scans the manual scan profiles plus, when enabled, the most liquid USDT pairs on that venue. Configure the universe (on/off, number of pairs, timeframes, minimum 24h volume) in the dashboard's scan profile panel; the selection refreshes hourly.
+
+Live orders still go to OKX, so in live (non-shadow) mode the universe only includes pairs OKX lists as USDT perpetual swaps, and order sizing uses OKX prices. Configs saved before the universe existed only get it automatically in shadow mode; live trading has to enable it explicitly.
 
 Never commit `.env`, `data/`, logs, SQLite files, screenshots containing account information, or encrypted credential stores.
 

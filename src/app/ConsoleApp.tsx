@@ -19,6 +19,7 @@ import { HistoryPage } from "./pages/HistoryPage";
 import { PortfolioPage } from "./pages/PortfolioPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import {
+  buildSymbolOptions,
   clearToken,
   formatDateOnly,
   mergeConfig,
@@ -194,6 +195,10 @@ export function ConsoleApp() {
   ]);
 
   const selectedTicker = market.runtimeMarket.tickers[selectedSymbol] || market.runtimeMarket.ticker;
+  const symbolOptions = React.useMemo(
+    () => buildSymbolOptions(market.runtimeMarket.tickers, selectedSymbol),
+    [market.runtimeMarket.tickers, selectedSymbol]
+  );
 
   const filteredTraces = React.useMemo(() => {
     return autoTrading.diagnosticsTraces.filter((trace) => {
@@ -469,6 +474,7 @@ export function ConsoleApp() {
 
         <main className="min-w-0">
           <HeaderBar
+            symbols={symbolOptions}
             selectedSymbol={selectedSymbol}
             onSelectSymbol={setSelectedSymbol}
             selectedTicker={selectedTicker}
