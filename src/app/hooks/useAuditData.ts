@@ -49,7 +49,7 @@ export function useAuditData({
         if (!cancelled) setAuditTrades(rows);
       })
       .catch((error) => {
-        if (!cancelled) setAuditTradesError(error instanceof Error ? error.message : "加载失败");
+        if (!cancelled) setAuditTradesError(error instanceof Error ? error.message : "Failed to load");
       })
       .finally(() => {
         if (!cancelled) setAuditTradesLoading(false);

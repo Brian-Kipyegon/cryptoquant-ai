@@ -22,13 +22,13 @@ export function MarketPage({
 }) {
   return (
     <div className="space-y-6">
-      <SectionTitle title="市场分析" subtitle="行情、订单簿、宏观因子和市场微结构。" />
+      <SectionTitle title="Market analysis" subtitle="Prices, order book, macro factors and market microstructure." />
       <div className="grid gap-6 xl:grid-cols-[1.35fr_1fr]">
         <section className={cardClassName()}>
           <div className="mb-4 flex items-center justify-between gap-3">
             <div>
               <div className="text-lg font-semibold text-zinc-50">{selectedSymbol}</div>
-              <div className="text-sm text-zinc-400">当前价格 {formatPrice(runtimeMarket.ticker?.last || 0, 2)}</div>
+              <div className="text-sm text-zinc-400">Price {formatPrice(runtimeMarket.ticker?.last || 0, 2)}</div>
             </div>
             <div className="flex gap-2">
               {(["15m", "1h"] as const).map((value) => (
@@ -56,7 +56,7 @@ export function MarketPage({
                 <YAxis tick={{ fill: "#71717a", fontSize: 12 }} axisLine={false} tickLine={false} width={80} />
                 <Tooltip
                   contentStyle={{ background: "#09090b", border: "1px solid #27272a", borderRadius: 16 }}
-                  formatter={(value: number) => [formatPrice(value, 2), "收盘价"]}
+                  formatter={(value: number) => [formatPrice(value, 2), "Close"]}
                 />
                 <Line type="monotone" dataKey="price" stroke="#22c55e" strokeWidth={2.5} dot={false} />
               </LineChart>
@@ -66,39 +66,39 @@ export function MarketPage({
 
         <div className="space-y-6">
           <section className={cardClassName()}>
-            <SectionTitle title="宏观经济因子" />
+            <SectionTitle title="Macro factors" />
             <div className="grid gap-4 md:grid-cols-2">
               <MetricCard
-                label="DXY 美元指数"
+                label="DXY dollar index"
                 value={
                   runtimeMarket.macro?.dxySource === "unavailable"
-                    ? "未获取到实时数据"
+                    ? "No live data"
                     : formatPrice(runtimeMarket.macro?.dxy || 0, 3)
                 }
-                hint={`来源: ${runtimeMarket.macro?.dxySource || "unknown"}`}
+                hint={`Source: ${runtimeMarket.macro?.dxySource || "unknown"}`}
               />
-              <MetricCard label="M2 货币供应量" value={runtimeMarket.macro?.m2 ? formatPrice(runtimeMarket.macro.m2, 1) : "—"} />
-              <MetricCard label="GLI 全球流动性" value={runtimeMarket.macro?.m2 ? formatPrice(runtimeMarket.macro.m2 / 200, 2) : "—"} />
+              <MetricCard label="M2 money supply" value={runtimeMarket.macro?.m2 ? formatPrice(runtimeMarket.macro.m2, 1) : "—"} />
+              <MetricCard label="GLI global liquidity" value={runtimeMarket.macro?.m2 ? formatPrice(runtimeMarket.macro.m2 / 200, 2) : "—"} />
               <MetricCard label="Macro Gate" value={runtimeMarket.macro?.macroGate?.state || "—"} hint={runtimeMarket.macro?.macroGate?.reason} />
             </div>
           </section>
 
           <section className={cardClassName()}>
-            <SectionTitle title="订单簿与资金费率" />
+            <SectionTitle title="Order book and funding rate" />
             <div className="grid gap-4 md:grid-cols-2">
               <MetricCard
                 label="Funding Rate"
                 value={formatPct(Number(runtimeMarket.funding?.fundingRate || 0) * 100, 4)}
               />
               <MetricCard
-                label="订单簿深度"
+                label="Order book depth"
                 value={String((runtimeMarket.orderBook?.bids?.length || 0) + (runtimeMarket.orderBook?.asks?.length || 0))}
               />
             </div>
 
             <div className="mt-4 grid gap-3 md:grid-cols-2">
               <div className="rounded-2xl border border-zinc-800 bg-zinc-950/70 p-4">
-                <div className="mb-2 text-sm font-medium text-zinc-200">买盘</div>
+                <div className="mb-2 text-sm font-medium text-zinc-200">Bids</div>
                 <div className="space-y-2 text-sm">
                   {(runtimeMarket.orderBook?.bids || []).slice(0, 6).map(([price, size]) => (
                     <div key={`bid-${price}`} className="flex items-center justify-between text-emerald-300">
@@ -109,7 +109,7 @@ export function MarketPage({
                 </div>
               </div>
               <div className="rounded-2xl border border-zinc-800 bg-zinc-950/70 p-4">
-                <div className="mb-2 text-sm font-medium text-zinc-200">卖盘</div>
+                <div className="mb-2 text-sm font-medium text-zinc-200">Asks</div>
                 <div className="space-y-2 text-sm">
                   {(runtimeMarket.orderBook?.asks || []).slice(0, 6).map(([price, size]) => (
                     <div key={`ask-${price}`} className="flex items-center justify-between text-rose-300">

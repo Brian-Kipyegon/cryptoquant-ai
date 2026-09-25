@@ -1,5 +1,5 @@
 /**
- * 核心技术指标计算工具 (Real-time Technical Indicators)
+ * Real-time technical indicator calculations
  */
 
 export const calculateRSI = (prices: number[], periods: number = 14): number => {

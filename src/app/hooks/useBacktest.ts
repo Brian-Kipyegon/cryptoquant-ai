@@ -42,9 +42,9 @@ export function useBacktest({
     } catch (error: any) {
       const payload = error?.payload && typeof error.payload === "object" ? error.payload : null;
       const details = payload?.bySymbol ? ` ${JSON.stringify(payload.bySymbol)}` : "";
-      const message = `${error?.message || "回测失败"}${details}`.slice(0, 1200);
+      const message = `${error?.message || "Backtest failed"}${details}`.slice(0, 1200);
       setBacktestError(message);
-      onToast({ kind: "error", message: error?.message || "回测失败" });
+      onToast({ kind: "error", message: error?.message || "Backtest failed" });
     } finally {
       setBacktestLoading(false);
     }

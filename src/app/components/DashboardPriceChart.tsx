@@ -24,7 +24,7 @@ export function DashboardPriceChart({
           <YAxis tick={{ fill: "#71717a", fontSize: 12 }} axisLine={false} tickLine={false} width={80} />
           <Tooltip
             contentStyle={{ background: "#09090b", border: "1px solid #27272a", borderRadius: 16 }}
-            formatter={(value: number) => [formatPrice(value, 2), "价格"]}
+            formatter={(value: number) => [formatPrice(value, 2), "Price"]}
           />
           <Area type="monotone" dataKey="price" stroke="#818cf8" fill="url(#priceFill)" strokeWidth={2} />
         </AreaChart>

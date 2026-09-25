@@ -18,7 +18,7 @@ export function LoginScreen({
     try {
       await onLogin(username, password);
     } catch (err: any) {
-      setError(err?.message || "登录失败");
+      setError(err?.message || "Sign-in failed");
     }
   };
 
@@ -29,15 +29,15 @@ export function LoginScreen({
           <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-500/15 text-indigo-300">
             <Bot className="h-6 w-6" />
           </div>
-          <h1 className="text-2xl font-semibold text-zinc-50">{"CryptoQuantAI Legacy 控制台"}</h1>
+          <h1 className="text-2xl font-semibold text-zinc-50">{"CryptoQuant AI Console"}</h1>
           <p className="mt-2 text-sm text-zinc-400">
-            {"登录后进入 Legacy 控制台。新版控制台入口保留在 `?source=1`。"}
+            {"Sign in to open the console."}
           </p>
         </div>
 
         <form className="space-y-4" onSubmit={handleSubmit}>
           <label className="block">
-            <span className="mb-2 block text-sm text-zinc-400">{"用户名"}</span>
+            <span className="mb-2 block text-sm text-zinc-400">{"Username"}</span>
             <input
               className="w-full rounded-2xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-zinc-50 outline-none transition focus:border-indigo-500"
               value={username}
@@ -46,7 +46,7 @@ export function LoginScreen({
             />
           </label>
           <label className="block">
-            <span className="mb-2 block text-sm text-zinc-400">{"密码"}</span>
+            <span className="mb-2 block text-sm text-zinc-400">{"Password"}</span>
             <input
               type="password"
               className="w-full rounded-2xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-zinc-50 outline-none transition focus:border-indigo-500"
@@ -65,7 +65,7 @@ export function LoginScreen({
             disabled={loading}
             className="inline-flex w-full items-center justify-center rounded-2xl bg-indigo-500 px-4 py-3 font-medium text-white transition hover:bg-indigo-400 disabled:cursor-not-allowed disabled:bg-indigo-900"
           >
-            {loading ? "登录中..." : "登录"}
+            {loading ? "Signing in..." : "Sign in"}
           </button>
         </form>
       </div>

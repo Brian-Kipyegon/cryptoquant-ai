@@ -181,7 +181,7 @@ export function ConsoleApp() {
       portfolio.refreshPortfolio(),
     ]).catch((error) => {
       console.error(error);
-      setToast({ kind: "error", message: error instanceof Error ? error.message : "初始化失败" });
+      setToast({ kind: "error", message: error instanceof Error ? error.message : "Initialization failed" });
     });
   }, [
     refreshConfigStatus,
@@ -260,7 +260,7 @@ export function ConsoleApp() {
         setTokenState(response.token);
         setSessionUser(response.user);
         setAuthChecked(true);
-        setToast({ kind: "success", message: "登录成功" });
+        setToast({ kind: "success", message: "Signed in" });
       } finally {
         setLoginLoading(false);
       }
@@ -279,7 +279,7 @@ export function ConsoleApp() {
       clearToken();
       setTokenState("");
       setSessionUser(null);
-      setToast({ kind: "info", message: "已退出登录" });
+      setToast({ kind: "info", message: "Signed out" });
     }
   }, [token, setToast]);
 
@@ -299,11 +299,11 @@ export function ConsoleApp() {
         kind: "success",
         message:
           autoTrading.autoStatus?.state === "running"
-            ? "配置已保存，将从下一轮扫描开始使用。"
-            : "配置已保存。",
+            ? "Configuration saved; it applies from the next scan."
+            : "Configuration saved.",
       });
     } catch (error: any) {
-      setToast({ kind: "error", message: error?.message || "配置保存失败" });
+      setToast({ kind: "error", message: error?.message || "Failed to save configuration" });
     } finally {
       setSettingsSaving(false);
     }
@@ -320,7 +320,7 @@ export function ConsoleApp() {
   if (!authChecked) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-zinc-950 text-zinc-400">
-        正在初始化控制台...
+        Initializing console...
       </div>
     );
   }
@@ -353,7 +353,7 @@ export function ConsoleApp() {
       break;
     case "market":
       content = (
-        <React.Suspense fallback={<PageLoading title="正在加载市场分析..." />}>
+        <React.Suspense fallback={<PageLoading title="Loading market analysis..." />}>
           <MarketPage
             selectedSymbol={selectedSymbol}
             chartTimeframe={chartTimeframe}
@@ -387,7 +387,7 @@ export function ConsoleApp() {
       break;
     case "backtest":
       content = (
-        <React.Suspense fallback={<PageLoading title="正在加载策略验证..." />}>
+        <React.Suspense fallback={<PageLoading title="Loading strategy validation..." />}>
           <BacktestPage
             backtestForm={backtest.backtestForm}
             setBacktestForm={backtest.setBacktestForm}
@@ -401,7 +401,7 @@ export function ConsoleApp() {
       break;
     case "reliability":
       content = (
-        <React.Suspense fallback={<PageLoading title="正在加载执行可靠性..." />}>
+        <React.Suspense fallback={<PageLoading title="Loading execution reliability..." />}>
           <ReliabilityPage
             riskState={reliability.riskState}
             autoConfig={autoTrading.autoConfig}
@@ -413,7 +413,7 @@ export function ConsoleApp() {
       break;
     case "audit":
       content = (
-        <React.Suspense fallback={<PageLoading title="正在加载监控审计..." />}>
+        <React.Suspense fallback={<PageLoading title="Loading audit..." />}>
           <AuditPage
             auditSummary={audit.auditSummary}
             researchWeekly={audit.researchWeekly}
@@ -424,7 +424,7 @@ export function ConsoleApp() {
       break;
     case "diagnostics":
       content = (
-        <React.Suspense fallback={<PageLoading title="正在加载策略诊断..." />}>
+        <React.Suspense fallback={<PageLoading title="Loading strategy diagnostics..." />}>
           <DiagnosticsPage
             diagnosticsCycles={autoTrading.diagnosticsCycles}
             diagnosticsDate={diagnosticsDate}

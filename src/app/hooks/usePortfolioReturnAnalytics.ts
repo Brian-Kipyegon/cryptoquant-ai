@@ -38,7 +38,7 @@ type PortfolioReturnAnalyticsState = {
 
 function staleWarningFromAnalytics(payload: PortfolioReturnAnalytics) {
   if (payload.sourceStatus?.state !== "stale") return "";
-  return payload.sourceStatus.message || "当前显示上次成功快照。";
+  return payload.sourceStatus.message || "Showing the last successful snapshot.";
 }
 
 export function usePortfolioReturnAnalytics({
@@ -118,7 +118,7 @@ export function usePortfolioReturnAnalytics({
         loadingInitial: false,
         refreshing: false,
         error: fallback ? "" : message,
-        staleWarning: fallback ? `当前显示上次成功快照：${message}` : "",
+        staleWarning: fallback ? `Showing the last successful snapshot: ${message}` : "",
         requestKey,
       });
     }

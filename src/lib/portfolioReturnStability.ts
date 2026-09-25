@@ -70,7 +70,7 @@ export function isCurrentPortfolioReturnRequest(
   return sequence === latestSequence && (!responseRequestKey || responseRequestKey === expectedRequestKey);
 }
 
-export function portfolioReturnErrorMessage(error: unknown, fallback = '收益分析加载失败') {
+export function portfolioReturnErrorMessage(error: unknown, fallback = 'Failed to load return analytics') {
   return error instanceof Error && error.message ? error.message : fallback;
 }
 

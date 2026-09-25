@@ -31,11 +31,11 @@ export function ScanProfilesPanel({
   return (
     <section className={cardClassName()}>
       <SectionTitle
-        title="自动交易扫描配置"
-        subtitle="BTC/ETH 默认勾选 15m + 1h，SOL/DOGE 默认勾选 1h。保存后立即写入后端，下一轮自动交易生效。"
+        title="Auto-trading scan profiles"
+        subtitle="BTC/ETH default to 15m + 1h, SOL/DOGE to 1h. Saved to the backend immediately and applied from the next auto-trading cycle."
         action={
           <div className="rounded-full border border-indigo-500/30 bg-indigo-500/10 px-3 py-1 text-xs font-medium text-indigo-200">
-            扫描目标 {enabledTargets}
+            Scan targets {enabledTargets}
           </div>
         }
       />
@@ -68,7 +68,7 @@ export function ScanProfilesPanel({
               />
               <div>
                 <div className="font-medium text-zinc-50">{row.symbol}</div>
-                <div className="text-xs text-zinc-500">{row.enabled ? "已启用" : "未启用"}</div>
+                <div className="text-xs text-zinc-500">{row.enabled ? "Enabled" : "Disabled"}</div>
               </div>
             </div>
 
@@ -117,7 +117,7 @@ export function ScanProfilesPanel({
 
       <div className="mt-5 flex items-center justify-between gap-4">
         <div className="text-sm text-zinc-500">
-          相关性规则保持不变：BTC/ETH 同组，SOL 和 DOGE 独立。
+          Correlation rules are unchanged: BTC/ETH share a group; SOL and DOGE are independent.
         </div>
         <button
           type="button"
@@ -125,7 +125,7 @@ export function ScanProfilesPanel({
           onClick={() => onSave(draftToProfiles(draft))}
           className="rounded-2xl bg-indigo-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-400 disabled:cursor-not-allowed disabled:bg-indigo-900"
         >
-          {saving ? "保存中..." : "保存扫描配置"}
+          {saving ? "Saving..." : "Save scan profiles"}
         </button>
       </div>
     </section>

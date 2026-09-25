@@ -7,15 +7,15 @@ import { cardClassName, DEFAULT_STRATEGIES, formatDateTime, formatPct, formatPri
 import { AUTO_TRADING_ALLOWED_SYMBOLS } from "../../lib/tradingRuntime";
 
 const STATUS_LABELS: Record<FactorAuditItem["status"], string> = {
-  enabled: "已启用",
-  disabled: "已禁用",
-  unavailable: "无可用历史",
-  latest_revision_blocked: "阻止最新修订",
+  enabled: "Enabled",
+  disabled: "Disabled",
+  unavailable: "No history available",
+  latest_revision_blocked: "Latest revision blocked",
 };
 
 function strategyLabel(strategy: string) {
-  if (strategy === "trend-breakout") return "趋势突破";
-  if (strategy === "mean-reversion") return "均值回归";
+  if (strategy === "trend-breakout") return "Trend breakout";
+  if (strategy === "mean-reversion") return "Mean reversion";
   return strategy;
 }
 
@@ -28,36 +28,36 @@ function trendFor(value?: number | null): "up" | "down" | "neutral" {
 
 function summaryCards(summary: StrategyWalkForwardSummary | undefined) {
   return [
-    { label: "切片数", value: String(summary?.rounds || 0), trend: "neutral" as const },
-    { label: "有效切片", value: String(summary?.validRounds || 0), trend: "up" as const },
-    { label: "交易不足", value: String(summary?.insufficientTradeRounds || 0), trend: summary?.insufficientTradeRounds ? "down" as const : "neutral" as const },
-    { label: "无验证交易", value: String(summary?.noValidationTradeRounds || 0), trend: summary?.noValidationTradeRounds ? "down" as const : "neutral" as const },
-    { label: "中位收益", value: formatPct(summary?.medianReturn || 0), trend: trendFor(summary?.medianReturn) },
-    { label: "最差收益", value: formatPct(summary?.worstReturn || 0), trend: trendFor(summary?.worstReturn) },
-    { label: "最差回撤", value: formatPct(summary?.worstMaxDrawdown || 0), trend: "down" as const },
+    { label: "Rounds", value: String(summary?.rounds || 0), trend: "neutral" as const },
+    { label: "Valid rounds", value: String(summary?.validRounds || 0), trend: "up" as const },
+    { label: "Too few trades", value: String(summary?.insufficientTradeRounds || 0), trend: summary?.insufficientTradeRounds ? "down" as const : "neutral" as const },
+    { label: "No validation trades", value: String(summary?.noValidationTradeRounds || 0), trend: summary?.noValidationTradeRounds ? "down" as const : "neutral" as const },
+    { label: "Median return", value: formatPct(summary?.medianReturn || 0), trend: trendFor(summary?.medianReturn) },
+    { label: "Worst return", value: formatPct(summary?.worstReturn || 0), trend: trendFor(summary?.worstReturn) },
+    { label: "Worst drawdown", value: formatPct(summary?.worstMaxDrawdown || 0), trend: "down" as const },
     { label: "Profit Factor", value: formatPrice(summary?.medianProfitFactor || 0, 2), trend: "neutral" as const },
-    { label: "脆弱切片", value: String(summary?.fragileRounds || 0), trend: summary?.fragileRounds ? "down" as const : "neutral" as const },
+    { label: "Fragile rounds", value: String(summary?.fragileRounds || 0), trend: summary?.fragileRounds ? "down" as const : "neutral" as const },
   ];
 }
 
 const STATUS_META: Record<WalkForwardValidationStatus, { label: string; className: string }> = {
-  stable: { label: "稳定", className: "text-emerald-300" },
-  fragile: { label: "脆弱", className: "text-amber-200" },
-  insufficient_trades: { label: "交易不足", className: "text-rose-300" },
-  no_validation_trades: { label: "无验证交易", className: "text-amber-200" },
+  stable: { label: "Stable", className: "text-emerald-300" },
+  fragile: { label: "Fragile", className: "text-amber-200" },
+  insufficient_trades: { label: "Too few trades", className: "text-rose-300" },
+  no_validation_trades: { label: "No validation trades", className: "text-amber-200" },
 };
 
 const REASON_LABELS: Record<string, string> = {
-  risk_off_blocked: "风险关闭",
-  macro_gate_blocked: "宏观门控",
-  trend_regime_not_ready: "趋势状态不足",
-  trend_filters_not_aligned: "趋势过滤未共振",
-  mean_reversion_wrong_regime: "非震荡环境",
-  higher_timeframe_trend_blocked: "高周期趋势过滤",
-  volatility_expansion_blocked: "波动扩张",
-  mean_reversion_not_extreme: "未触及极值",
-  risk_sizing_invalid: "风险仓位无效",
-  other_hold: "其他等待",
+  risk_off_blocked: "Risk off",
+  macro_gate_blocked: "Macro gate",
+  trend_regime_not_ready: "Trend regime not ready",
+  trend_filters_not_aligned: "Trend filters not aligned",
+  mean_reversion_wrong_regime: "Not a ranging market",
+  higher_timeframe_trend_blocked: "Higher-timeframe trend filter",
+  volatility_expansion_blocked: "Volatility expansion",
+  mean_reversion_not_extreme: "No extreme reached",
+  risk_sizing_invalid: "Invalid risk sizing",
+  other_hold: "Other hold",
 };
 
 function statusMeta(status?: WalkForwardValidationStatus) {
@@ -131,7 +131,7 @@ function StrategyTabs({
 function FactorAudit({ audit }: { audit: FactorAuditItem[] }) {
   return (
     <section className={cardClassName()}>
-      <SectionTitle title="数据可信度审计" subtitle="严格模式下，只有具备真实时间戳的数据会进入回测。" />
+      <SectionTitle title="Data integrity audit" subtitle="In strict mode only data with real timestamps enters the backtest." />
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         {audit.map((item) => (
           <div
@@ -149,7 +149,7 @@ function FactorAudit({ audit }: { audit: FactorAuditItem[] }) {
             </div>
             <div className="mt-3 text-sm leading-6 text-zinc-300">{item.message}</div>
             {item.requiredTimestamp ? (
-              <div className="mt-3 text-xs text-zinc-500">需要时间字段：{item.requiredTimestamp}</div>
+              <div className="mt-3 text-xs text-zinc-500">Required timestamp field: {item.requiredTimestamp}</div>
             ) : null}
           </div>
         ))}
@@ -161,28 +161,28 @@ function FactorAudit({ audit }: { audit: FactorAuditItem[] }) {
 function RoundsTable({ rounds }: { rounds: WalkForwardRound[] }) {
   return (
     <section className={cardClassName()}>
-      <SectionTitle title="切片明细" subtitle="训练窗口只在前，验证窗口只在后；0 交易和训练不足会明确标记，不再显示为稳定。" />
+      <SectionTitle title="Round details" subtitle="Training windows always precede validation windows; zero-trade and under-trained rounds are flagged, never shown as stable." />
       <div className="overflow-x-auto rounded-2xl border border-zinc-800">
         <div className="min-w-[1780px]">
           <div className="grid grid-cols-[110px_150px_150px_80px_80px_95px_95px_80px_95px_110px_145px_145px_120px_130px] gap-3 border-b border-zinc-800 bg-zinc-950/80 px-4 py-3 text-xs uppercase tracking-wide text-zinc-500">
-            <span>标的</span>
-            <span>训练区间</span>
-            <span>验证区间</span>
-            <span>止损</span>
-            <span>止盈</span>
-            <span>验证收益</span>
-            <span>最大回撤</span>
-            <span>胜率</span>
-            <span>训练/验证</span>
-            <span>状态</span>
-            <span>不开仓主因</span>
-            <span>退出统计</span>
-            <span>均盈/均亏</span>
-            <span>费用滑点/毛利</span>
+            <span>Symbol</span>
+            <span>Training window</span>
+            <span>Validation window</span>
+            <span>Stop loss</span>
+            <span>Take profit</span>
+            <span>Validation return</span>
+            <span>Max drawdown</span>
+            <span>Win rate</span>
+            <span>Train/validate</span>
+            <span>Status</span>
+            <span>Main no-entry reason</span>
+            <span>Exit stats</span>
+            <span>Avg win/loss</span>
+            <span>Costs/gross profit</span>
           </div>
           <div>
             {rounds.length === 0 ? (
-              <div className="px-4 py-8 text-center text-sm text-zinc-500">暂无 walk-forward 切片</div>
+              <div className="px-4 py-8 text-center text-sm text-zinc-500">No walk-forward rounds yet</div>
             ) : (
               rounds.map((round, index) => {
                 const status = statusMeta(round.validationStatus);
@@ -212,7 +212,7 @@ function RoundsTable({ rounds }: { rounds: WalkForwardRound[] }) {
                       {round.insufficientReason || topReason(round)}
                     </span>
                     <span className="text-zinc-400">
-                      SL {diagnostics?.stopLossCount || 0} / TP {diagnostics?.takeProfitCount || 0} / 反 {diagnostics?.oppositeSignalCount || 0}
+                      SL {diagnostics?.stopLossCount || 0} / TP {diagnostics?.takeProfitCount || 0} / Reverse {diagnostics?.oppositeSignalCount || 0}
                     </span>
                     <span className="text-zinc-400">{formatUsd(diagnostics?.avgWin || 0, 2)} / {formatUsd(diagnostics?.avgLoss || 0, 2)}</span>
                     <span>{formatPct(diagnostics?.feeSlippageToGrossProfitPct || 0)}</span>
@@ -269,14 +269,14 @@ export function BacktestPage({
   return (
     <div className="space-y-6">
       <SectionTitle
-        title="Walk-forward 策略验证"
-        subtitle="默认分开验证趋势突破与均值回归；价格 K 线按时间切片回放，新闻、链上、宏观未具备 point-in-time 数据前不会参与。"
+        title="Walk-forward strategy validation"
+        subtitle="Trend breakout and mean reversion are validated separately by default. Price candles replay in time order; news, on-chain and macro data stay out until point-in-time data is available."
       />
 
       <section className={cardClassName()}>
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <label className="text-sm text-zinc-400">
-            周期
+            Timeframe
             <select
               value={backtestForm.timeframe}
               onChange={(event) => setBacktestForm((current) => ({ ...current, timeframe: event.target.value }))}
@@ -286,20 +286,20 @@ export function BacktestPage({
               <option value="1h">1h</option>
             </select>
           </label>
-          <FormNumber label="初始资金" value={backtestForm.initialEquity} min={1} onChange={(value) => setBacktestForm((current) => ({ ...current, initialEquity: value }))} />
-          <FormNumber label="训练窗口（天）" value={backtestForm.trainDays} min={1} onChange={(value) => setBacktestForm((current) => ({ ...current, trainDays: value }))} />
-          <FormNumber label="验证窗口（天）" value={backtestForm.validationDays} min={1} onChange={(value) => setBacktestForm((current) => ({ ...current, validationDays: value }))} />
-          <FormNumber label="步长（天）" value={backtestForm.stepDays} min={1} onChange={(value) => setBacktestForm((current) => ({ ...current, stepDays: value }))} />
-          <FormNumber label="数据上限（bars）" value={backtestForm.period} min={120} onChange={(value) => setBacktestForm((current) => ({ ...current, period: value }))} />
-          <FormNumber label="基准止损" value={backtestForm.stopLoss} min={0.1} step={0.1} onChange={(value) => setBacktestForm((current) => ({ ...current, stopLoss: value }))} />
-          <FormNumber label="基准止盈" value={backtestForm.takeProfit} min={0.1} step={0.1} onChange={(value) => setBacktestForm((current) => ({ ...current, takeProfit: value }))} />
-          <FormNumber label="最少训练交易数" value={backtestForm.minTrainTrades} min={0} onChange={(value) => setBacktestForm((current) => ({ ...current, minTrainTrades: value }))} />
-          <FormNumber label="每笔风险（%）" value={backtestForm.riskPerTradePct} min={0.1} step={0.1} onChange={(value) => setBacktestForm((current) => ({ ...current, riskPerTradePct: value }))} />
+          <FormNumber label="Initial capital" value={backtestForm.initialEquity} min={1} onChange={(value) => setBacktestForm((current) => ({ ...current, initialEquity: value }))} />
+          <FormNumber label="Training window (days)" value={backtestForm.trainDays} min={1} onChange={(value) => setBacktestForm((current) => ({ ...current, trainDays: value }))} />
+          <FormNumber label="Validation window (days)" value={backtestForm.validationDays} min={1} onChange={(value) => setBacktestForm((current) => ({ ...current, validationDays: value }))} />
+          <FormNumber label="Step (days)" value={backtestForm.stepDays} min={1} onChange={(value) => setBacktestForm((current) => ({ ...current, stepDays: value }))} />
+          <FormNumber label="Data limit (bars)" value={backtestForm.period} min={120} onChange={(value) => setBacktestForm((current) => ({ ...current, period: value }))} />
+          <FormNumber label="Base stop loss" value={backtestForm.stopLoss} min={0.1} step={0.1} onChange={(value) => setBacktestForm((current) => ({ ...current, stopLoss: value }))} />
+          <FormNumber label="Base take profit" value={backtestForm.takeProfit} min={0.1} step={0.1} onChange={(value) => setBacktestForm((current) => ({ ...current, takeProfit: value }))} />
+          <FormNumber label="Min training trades" value={backtestForm.minTrainTrades} min={0} onChange={(value) => setBacktestForm((current) => ({ ...current, minTrainTrades: value }))} />
+          <FormNumber label="Risk per trade (%)" value={backtestForm.riskPerTradePct} min={0.1} step={0.1} onChange={(value) => setBacktestForm((current) => ({ ...current, riskPerTradePct: value }))} />
         </div>
 
         <div className="mt-5 grid gap-4 xl:grid-cols-[1.4fr_1fr]">
           <div>
-            <div className="text-sm text-zinc-400">验证标的</div>
+            <div className="text-sm text-zinc-400">Symbols</div>
             <div className="mt-2 flex flex-wrap gap-2">
               {AUTO_TRADING_ALLOWED_SYMBOLS.map((symbol) => (
                 <button
@@ -319,7 +319,7 @@ export function BacktestPage({
             </div>
           </div>
           <div>
-            <div className="text-sm text-zinc-400">验证策略</div>
+            <div className="text-sm text-zinc-400">Strategies</div>
             <div className="mt-2 flex flex-wrap gap-2">
               {DEFAULT_STRATEGIES.map((strategy) => (
                 <span key={strategy} className="rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-200">
@@ -331,7 +331,7 @@ export function BacktestPage({
         </div>
 
         <div className="mt-5 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm leading-6 text-amber-100">
-          严格模式：当前只允许价格 K 线参与信号。新闻、链上、宏观数据必须有真实发布时间或 vintage 时间戳，否则只进入审计提示，不进入策略上下文。
+          Strict mode: only price candles feed signals. News, on-chain and macro data need a real publication or vintage timestamp; otherwise they appear only as audit notes, never in the strategy context.
         </div>
 
         <div className="mt-5 flex flex-wrap items-center gap-3">
@@ -341,20 +341,20 @@ export function BacktestPage({
             disabled={backtestLoading}
             className="rounded-2xl bg-indigo-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-400 disabled:cursor-not-allowed disabled:bg-indigo-900"
           >
-            {backtestLoading ? "验证中..." : "运行 Walk-forward 验证"}
+            {backtestLoading ? "Validating..." : "Run walk-forward validation"}
           </button>
           <span className="text-sm text-zinc-500">
-            默认初始资金：{formatUsd(backtestForm.initialEquity, 2)}，每笔风险 {formatPct(backtestForm.riskPerTradePct)}，训练少于 {backtestForm.minTrainTrades} 笔会标记为交易不足。
+            Initial capital: {formatUsd(backtestForm.initialEquity, 2)}, risk per trade {formatPct(backtestForm.riskPerTradePct)}; rounds with fewer than {backtestForm.minTrainTrades} training trades are flagged as too few trades.
           </span>
         </div>
       </section>
 
       {backtestError ? (
         <section className="rounded-3xl border border-rose-500/30 bg-rose-500/10 p-5 text-sm leading-6 text-rose-100">
-          <div className="font-semibold text-rose-200">Walk-forward 回测失败</div>
+          <div className="font-semibold text-rose-200">Walk-forward backtest failed</div>
           <div className="mt-2 whitespace-pre-wrap break-words">{backtestError}</div>
           <div className="mt-3 text-xs text-rose-200/70">
-            这里不会回退到旧单段回测或 0% 假曲线；请缩短训练/验证窗口、增加 bars 上限，或检查 OKX OHLCV 数据。
+            There is no fallback to the old single-period backtest or a fake 0% curve. Shorten the training/validation windows, raise the bar limit, or check the OKX OHLCV data.
           </div>
         </section>
       ) : null}
@@ -363,8 +363,8 @@ export function BacktestPage({
         <div className="space-y-6">
           <section className={cardClassName("space-y-5")}>
             <SectionTitle
-              title="策略总览"
-              subtitle={`按策略独立判断，不把 0 交易趋势突破和均值回归结果混成一个结论。每笔风险 ${formatPct(backtestResult.config.riskPerTradePct)}，训练最少 ${backtestResult.config.minTrainTrades} 笔。`}
+              title="Strategy overview"
+              subtitle={`Each strategy is judged on its own; zero-trade trend breakout and mean reversion results are never merged into one verdict. Risk per trade ${formatPct(backtestResult.config.riskPerTradePct)}, minimum ${backtestResult.config.minTrainTrades} training trades.`}
             />
             <StrategyTabs strategies={resultStrategies} activeStrategy={activeStrategy} onChange={setActiveStrategy} />
             <div className="grid gap-4 md:grid-cols-3 xl:grid-cols-6">
@@ -379,7 +379,7 @@ export function BacktestPage({
           <RoundsTable rounds={activeRounds} />
 
           <section className={cardClassName("space-y-4")}>
-            <SectionTitle title="全部切片审计" subtitle="仅用于检查样本覆盖，不作为策略收益结论。" />
+            <SectionTitle title="All rounds audit" subtitle="For checking sample coverage only, not a verdict on strategy returns." />
             <div className="grid gap-4 md:grid-cols-3 xl:grid-cols-6">
               {summaryCards(backtestResult.summary).map((item) => (
                 <React.Fragment key={item.label}>
@@ -392,7 +392,7 @@ export function BacktestPage({
           <FactorAudit audit={backtestResult.factorAudit || []} />
 
           <section className={cardClassName()}>
-            <SectionTitle title="时间一致性" />
+            <SectionTitle title="Time consistency" />
             <div className="grid gap-3 md:grid-cols-2">
               {Object.entries(backtestResult.timeConsistency || {}).map(([key, value]) => (
                 <div key={key} className="rounded-2xl border border-zinc-800 bg-zinc-950/70 p-4">

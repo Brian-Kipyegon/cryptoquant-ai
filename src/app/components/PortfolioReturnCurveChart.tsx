@@ -58,7 +58,7 @@ export function PortfolioReturnCurveChart({
           yAxisId="pnl"
           type="monotone"
           dataKey="cumulativePnl"
-          name="累计收益"
+          name="Cumulative return"
           stroke="#22c55e"
           fill="url(#returnPnlFill)"
           strokeWidth={2}
@@ -67,7 +67,7 @@ export function PortfolioReturnCurveChart({
           yAxisId="pct"
           type="monotone"
           dataKey="drawdownPct"
-          name="回撤"
+          name="Drawdown"
           stroke="#f43f5e"
           fill="url(#drawdownFill)"
           strokeWidth={2}
