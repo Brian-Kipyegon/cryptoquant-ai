@@ -4,6 +4,13 @@ CryptoQuant AI is a local-first quantitative cryptocurrency trading dashboard fo
 
 > This project is for research and personal operations. It is not financial advice. Use demo trading first, keep API permissions limited, and never expose this service directly to the public internet without proper hardening.
 
+## Documentation
+
+- [Architecture](docs/architecture.md): how the system is put together and where it is heading.
+- [Running guide](docs/running.md): setup, configuration, Docker, using the dashboard, troubleshooting.
+- [Roadmap](docs/roadmap.md): the phased build plan and current status.
+- [CLAUDE.md](CLAUDE.md): guidance for AI coding agents working in this repo.
+
 ## Features
 
 - Market data from Binance by default (public endpoints, no API key), or Binance.US / OKX via `DATA_EXCHANGE`.
