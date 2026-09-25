@@ -8,6 +8,13 @@ import {
   type ScanProfileDraft,
 } from "../utils";
 import { AUTO_TRADING_ALLOWED_TIMEFRAMES } from "../../lib/tradingRuntime";
+import {
+  DEFAULT_UNIVERSE_CONFIG,
+  UNIVERSE_SIZE_LIMITS,
+  UNIVERSE_TIMEFRAMES,
+  sanitizeUniverseConfig,
+  type UniverseConfig,
+} from "../../lib/universe";
 import { cardClassName } from "../utils";
 import { SectionTitle } from "./common";
 
@@ -18,24 +25,28 @@ export function ScanProfilesPanel({
 }: {
   config: AutoTradingConfig | null;
   saving: boolean;
-  onSave: (profiles: AutoTradingConfig["scanProfiles"]) => Promise<void>;
+  onSave: (profiles: AutoTradingConfig["scanProfiles"], universe: UniverseConfig) => Promise<void>;
 }) {
   const [draft, setDraft] = React.useState<ScanProfileDraft[]>(() => profilesToDraft(config));
+  const [universe, setUniverse] = React.useState<UniverseConfig>(() => sanitizeUniverseConfig(config?.universe ?? DEFAULT_UNIVERSE_CONFIG));
 
   React.useEffect(() => {
     setDraft(profilesToDraft(config));
+    setUniverse(sanitizeUniverseConfig(config?.universe ?? DEFAULT_UNIVERSE_CONFIG));
   }, [config]);
 
-  const enabledTargets = draft.reduce((acc, row) => acc + (row.enabled ? row.timeframes.length : 0), 0);
+  const profileTargets = draft.reduce((acc, row) => acc + (row.enabled ? row.timeframes.length : 0), 0);
+  const universeTargets = universe.enabled ? universe.size * universe.timeframes.length : 0;
+  const enabledTargets = profileTargets + universeTargets;
 
   return (
     <section className={cardClassName()}>
       <SectionTitle
         title="Auto-trading scan profiles"
-        subtitle="BTC/ETH default to 15m + 1h, SOL/DOGE to 1h. Saved to the backend immediately and applied from the next auto-trading cycle."
+        subtitle="Manual pairs below, plus the most liquid pairs on the market data exchange. Saved immediately and applied from the next auto-trading cycle."
         action={
           <div className="rounded-full border border-indigo-500/30 bg-indigo-500/10 px-3 py-1 text-xs font-medium text-indigo-200">
-            Scan targets {enabledTargets}
+            Scan targets {universe.enabled ? "up to " : ""}{enabledTargets}
           </div>
         }
       />
@@ -115,14 +126,89 @@ export function ScanProfilesPanel({
         ))}
       </div>
 
+      <div className="mt-5 rounded-2xl border border-zinc-800 bg-zinc-950/60 p-4">
+        <label className="flex items-center gap-3">
+          <input
+            type="checkbox"
+            checked={universe.enabled}
+            onChange={(event) => setUniverse((current) => ({ ...current, enabled: event.target.checked }))}
+            className="h-4 w-4 accent-indigo-500"
+          />
+          <div>
+            <div className="font-medium text-zinc-50">Scan the most liquid pairs</div>
+            <div className="text-xs text-zinc-500">
+              USDT pairs ranked by 24h volume, excluding stablecoins, fiat, wrapped and leveraged tokens. Refreshed hourly.
+              In live mode only pairs OKX can trade are included.
+            </div>
+          </div>
+        </label>
+
+        <div className={clsx("mt-4 grid gap-4 md:grid-cols-3", !universe.enabled && "opacity-50")}>
+          <label className="text-sm text-zinc-400">
+            Pairs
+            <input
+              type="number"
+              min={UNIVERSE_SIZE_LIMITS.min}
+              max={UNIVERSE_SIZE_LIMITS.max}
+              disabled={!universe.enabled}
+              value={universe.size}
+              onChange={(event) => setUniverse((current) => ({ ...current, size: Number(event.target.value) }))}
+              className="mt-2 w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-2 text-zinc-100 outline-none focus:border-indigo-500"
+            />
+          </label>
+          <label className="text-sm text-zinc-400">
+            Min 24h volume (million USDT)
+            <input
+              type="number"
+              min={0}
+              step={0.5}
+              disabled={!universe.enabled}
+              value={universe.minQuoteVolume / 1_000_000}
+              onChange={(event) => setUniverse((current) => ({ ...current, minQuoteVolume: Number(event.target.value) * 1_000_000 }))}
+              className="mt-2 w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-2 text-zinc-100 outline-none focus:border-indigo-500"
+            />
+          </label>
+          <div className="text-sm text-zinc-400">
+            Timeframes
+            <div className="mt-2 flex flex-wrap gap-2">
+              {UNIVERSE_TIMEFRAMES.map((timeframe) => {
+                const active = universe.timeframes.includes(timeframe);
+                return (
+                  <label
+                    key={timeframe}
+                    className="inline-flex items-center gap-2 rounded-full border border-zinc-700 bg-zinc-900 px-3 py-2 text-zinc-200"
+                  >
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4 accent-indigo-500"
+                      disabled={!universe.enabled}
+                      checked={active}
+                      onChange={(event) =>
+                        setUniverse((current) => {
+                          const next = event.target.checked
+                            ? Array.from(new Set([...current.timeframes, timeframe])).sort()
+                            : current.timeframes.filter((value) => value !== timeframe);
+                          return next.length ? { ...current, timeframes: next } : current;
+                        })
+                      }
+                    />
+                    <span>{timeframe}</span>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="mt-5 flex items-center justify-between gap-4">
         <div className="text-sm text-zinc-500">
-          Correlation rules are unchanged: BTC/ETH share a group; SOL and DOGE are independent.
+          Correlation rules: BTC/ETH share a group; every other pair is its own group.
         </div>
         <button
           type="button"
           disabled={saving}
-          onClick={() => onSave(draftToProfiles(draft))}
+          onClick={() => onSave(draftToProfiles(draft), sanitizeUniverseConfig(universe))}
           className="rounded-2xl bg-indigo-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-400 disabled:cursor-not-allowed disabled:bg-indigo-900"
         >
           {saving ? "Saving..." : "Save scan profiles"}

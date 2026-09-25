@@ -47,13 +47,8 @@ export function isPublicApi(req: express.Request) {
   if (req.path.startsWith("/auth/")) return true;
   if (req.method === "GET" && req.path === "/config/status") return true;
   if (req.method === "GET" && req.path === "/macro") return true;
-  if (req.method === "GET" && (
-    req.path.startsWith("/okx/ticker/") ||
-    req.path.startsWith("/okx/orderbook/") ||
-    req.path === "/okx/tickers" ||
-    req.path.startsWith("/okx/ohlcv/") ||
-    req.path.startsWith("/okx/funding/")
-  )) return true;
+  if (req.method === "GET" && /^\/(okx|market)\/(ticker\/|orderbook\/|tickers$|ohlcv\/|funding\/)/.test(req.path)) return true;
+  if (req.method === "GET" && req.path === "/market/source") return true;
   return false;
 }
 

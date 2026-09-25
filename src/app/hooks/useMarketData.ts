@@ -37,11 +37,11 @@ export function useMarketData({
     async (signal?: AbortSignal) => {
       const [tickersResult, tickerResult, orderBookResult, fundingResult, ohlcvResult, macroResult] =
         await Promise.allSettled([
-        apiFetch<Record<string, Ticker>>("/api/okx/tickers", { signal }),
-        apiFetch<any>(`/api/okx/ticker/${encodeURIComponent(selectedSymbol)}`, { signal }),
-        apiFetch<OrderBook>(`/api/okx/orderbook/${encodeURIComponent(selectedSymbol)}`, { signal }),
-        apiFetch<Record<string, unknown>>(`/api/okx/funding/${encodeURIComponent(selectedSymbol)}`, { signal }),
-        apiFetch<number[][]>(`/api/okx/ohlcv/${encodeURIComponent(selectedSymbol)}?t=${chartTimeframe}&limit=120`, {
+        apiFetch<Record<string, Ticker>>("/api/market/tickers", { signal }),
+        apiFetch<any>(`/api/market/ticker/${encodeURIComponent(selectedSymbol)}`, { signal }),
+        apiFetch<OrderBook>(`/api/market/orderbook/${encodeURIComponent(selectedSymbol)}`, { signal }),
+        apiFetch<Record<string, unknown>>(`/api/market/funding/${encodeURIComponent(selectedSymbol)}`, { signal }),
+        apiFetch<number[][]>(`/api/market/ohlcv/${encodeURIComponent(selectedSymbol)}?t=${chartTimeframe}&limit=120`, {
           signal,
         }),
         apiFetch<MacroResponse>("/api/macro", { signal }),

@@ -8,7 +8,7 @@ This checklist summarizes the environment, configuration, and safety checks need
 - Node.js 24 or newer.
 - npm 10 or newer.
 - Git.
-- Stable network access to OKX, or a local proxy configured through `EXCHANGE_PROXY_URL`.
+- Stable network access to the market data exchange (Binance by default) and, for account features, OKX; or a local proxy configured through `EXCHANGE_PROXY_URL`.
 
 ## First Run
 

@@ -1,3 +1,4 @@
+import type { UniverseConfig } from "../../lib/universe";
 import React from "react";
 
 import {
@@ -86,11 +87,11 @@ export function useAutoTradingRuntime({
   );
 
   const handleSaveScanProfiles = React.useCallback(
-    async (profiles: AutoTradingConfig["scanProfiles"]) => {
+    async (profiles: AutoTradingConfig["scanProfiles"], universe?: UniverseConfig) => {
       if (!autoConfig) return;
       setScanProfilesSaving(true);
       try {
-        await saveAutoConfig({ ...autoConfig, scanProfiles: profiles });
+        await saveAutoConfig({ ...autoConfig, scanProfiles: profiles, ...(universe ? { universe } : {}) });
         onToast({ kind: "success", message: "Scan profiles saved; they apply from the next scan." });
       } catch (error: any) {
         onToast({ kind: "error", message: error?.message || "Failed to save scan profiles" });

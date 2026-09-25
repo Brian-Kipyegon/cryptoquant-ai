@@ -1,3 +1,4 @@
+import type { UniverseConfig } from "../src/lib/universe";
 import path from "path";
 import { type AutoTradingRiskConfig } from "../src/lib/tradingRuntime";
 
@@ -74,6 +75,8 @@ export type AutoTradingConfig = {
   sandbox: boolean;
   scanProfilesVersion: number;
   scanProfiles: AutoTradingScanProfile[];
+  /** Most-liquid pairs scanned in addition to the manual scan profiles. */
+  universe: UniverseConfig;
   strategyIds: string[];
   riskConfigSnapshot: AutoTradingRiskConfig;
   shadowMode: boolean;

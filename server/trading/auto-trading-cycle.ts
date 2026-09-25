@@ -8,7 +8,13 @@ import { countActivePositions, fetchPrivateBalance, fetchPrivatePositions, getAc
 import { currentMacroSnapshot, resolveEngineCredentials } from "./engine-helpers";
 import { ensureFreshMacroData } from "../market/macro";
 import { fetchPublicMarketBundle, fetchPublicMarketBundleWithAutoRetry } from "../market/public-data";
-import { maintainOpenShadowOrders, recordStrategySignal } from "../persistence/trading-db";
+import { loadOpenShadowOrders, maintainOpenShadowOrders, pruneStrategySignals, recordStrategySignal } from "../persistence/trading-db";
+import { getMarketDataProvider } from "../market/providers";
+import { getUniverseSnapshot } from "../market/universe";
+import { buildScanTargets, checkMarketDataFreshness, getShadowPaperEquity, mapWithConcurrency } from "./scan-targets";
+
+/** Parallel market data requests per scan; ccxt rate limiting still applies per venue. */
+const SCAN_FETCH_CONCURRENCY = 8;
 import { requestError } from "../http-errors";
 import { submitOkxOrder } from "../execution/okx-orders";
 import { syncShadowPositionFromCandidate } from "./shadow-sync";
@@ -21,7 +27,9 @@ export async function runAutoTradingCycle(config: AutoTradingConfig, trigger: "s
   const startedAt = Date.now();
   const cycleId = `cycle_${startedAt}_${crypto.randomBytes(4).toString("hex")}`;
   const credentials = resolveEngineCredentials(config.sandbox);
-  if (!credentials) {
+  // Shadow mode can run on market data alone, sizing against a paper balance.
+  const paperAccount = !credentials && config.shadowMode;
+  if (!credentials && !paperAccount) {
     throw requestError(400, `Missing OKX credentials for ${config.sandbox ? "demo" : "live"} mode`, {
       error: `Missing OKX credentials for ${config.sandbox ? "demo" : "live"} mode`
     });
@@ -159,12 +167,20 @@ export async function runAutoTradingCycle(config: AutoTradingConfig, trigger: "s
     return { summary, nextDelayMs: cycleDelayMs };
   }
 
-  const [balance, positions] = await Promise.all([
-    fetchPrivateBalance(credentials, config.sandbox, true),
-    fetchPrivatePositions(credentials, config.sandbox, true),
-  ]);
-  const balanceTotal = getAccountTotalUSDT(balance);
-  const activePositionCount = countActivePositions(positions);
+  let balanceTotal: number;
+  let activePositionCount: number;
+  if (credentials) {
+    const [balance, positions] = await Promise.all([
+      fetchPrivateBalance(credentials, config.sandbox, true),
+      fetchPrivatePositions(credentials, config.sandbox, true),
+    ]);
+    balanceTotal = getAccountTotalUSDT(balance);
+    activePositionCount = countActivePositions(positions);
+  } else {
+    // Paper account: open shadow positions count against the same slot limit.
+    balanceTotal = getShadowPaperEquity();
+    activePositionCount = loadOpenShadowOrders().length;
+  }
   const maxConcurrentPositions = macroGate.state === "ALLOW_REDUCED" ? 1 : 2;
   const remainingSlots = Math.max(0, maxConcurrentPositions - activePositionCount);
   if (remainingSlots <= 0) {
@@ -214,187 +230,235 @@ export async function runAutoTradingCycle(config: AutoTradingConfig, trigger: "s
 
   pushAutoTradingLog(`Scan started (${trigger === "manual" ? "manual" : "scheduled"}, ${macroGate.state})`);
 
+  let universeSymbols: string[] = [];
+  if (config.universe.enabled) {
+    try {
+      const universe = await getUniverseSnapshot(config.universe, { requireOkxExecution: !config.shadowMode });
+      universeSymbols = universe.entries.map((entry) => entry.symbol);
+      if (universe.stale) pushAutoTradingLog(`Universe refresh failed, using the previous list: ${universe.error}`);
+    } catch (error: any) {
+      pushAutoTradingLog(`Universe unavailable, scanning manual profiles only: ${error?.message || String(error)}`);
+    }
+  }
+  const scanTargets = buildScanTargets(config.scanProfiles, universeSymbols, config.universe.timeframes);
+  const marketDataLabel = getMarketDataProvider().label;
+  pushAutoTradingLog(`Scanning ${scanTargets.length} targets (${universeSymbols.length} universe pairs) on ${marketDataLabel}`);
+
+  // Fetch all market data up front with bounded concurrency, then evaluate in order.
+  const prefetched = await mapWithConcurrency(scanTargets, SCAN_FETCH_CONCURRENCY, (target) =>
+    fetchPublicMarketBundleWithAutoRetry(target.symbol, target.timeframe, 120)
+  );
+
   const scannedSymbolSet = new Set<string>();
-  for (const profile of config.scanProfiles) {
-    for (const timeframe of profile.timeframes) {
-      const scanSymbol = profile.symbol;
-      let marketBundle: Awaited<ReturnType<typeof fetchPublicMarketBundle>> | null = null;
-      try {
-        marketBundle = await fetchPublicMarketBundleWithAutoRetry(scanSymbol, timeframe, 120);
-      } catch (error: any) {
-        const message = error?.message || String(error);
-        pushAutoTradingLog(`Market data failed for ${scanSymbol} ${timeframe}: ${message}`);
-        finalizeTrace(createTraceDraft({
-          symbol: scanSymbol,
-          timeframe,
-          strategyId: "*",
-          signal: "UNKNOWN",
-          confidence: 0,
-          requiredConfidence: 0,
-          steps: [
-            buildStep("market_data", "fail", message, { timeframe }),
-          ],
-        }), "market_data", message);
-        continue;
-      }
+  for (let targetIndex = 0; targetIndex < scanTargets.length; targetIndex += 1) {
+    const { symbol: scanSymbol, timeframe, source: targetSource } = scanTargets[targetIndex];
+    const fetched = prefetched[targetIndex];
+    let marketBundle: Awaited<ReturnType<typeof fetchPublicMarketBundle>> | null = null;
+    try {
+      if (!fetched.ok) throw fetched.error;
+      marketBundle = fetched.value;
+    } catch (error: any) {
+      const message = error?.message || String(error);
+      pushAutoTradingLog(`Market data failed for ${scanSymbol} ${timeframe}: ${message}`);
+      finalizeTrace(createTraceDraft({
+        symbol: scanSymbol,
+        timeframe,
+        strategyId: "*",
+        signal: "UNKNOWN",
+        confidence: 0,
+        requiredConfidence: 0,
+        steps: [
+          buildStep("market_data", "fail", message, { timeframe }),
+        ],
+      }), "market_data", message);
+      continue;
+    }
 
-      const scanTicker = normalizeTicker(scanSymbol, marketBundle.ticker);
-      if (!scanTicker) {
-        const message = `Ticker unavailable for ${scanSymbol} ${timeframe}`;
-        pushAutoTradingLog(message);
-        finalizeTrace(createTraceDraft({
-          symbol: scanSymbol,
-          timeframe,
-          strategyId: "*",
-          signal: "UNKNOWN",
-          confidence: 0,
-          requiredConfidence: 0,
-          steps: [
-            buildStep("market_data", "fail", message, { timeframe }),
-          ],
-        }), "market_data", message);
-        continue;
-      }
+    const scanTicker = normalizeTicker(scanSymbol, marketBundle.ticker);
+    if (!scanTicker) {
+      const message = `Ticker unavailable for ${scanSymbol} ${timeframe}`;
+      pushAutoTradingLog(message);
+      finalizeTrace(createTraceDraft({
+        symbol: scanSymbol,
+        timeframe,
+        strategyId: "*",
+        signal: "UNKNOWN",
+        confidence: 0,
+        requiredConfidence: 0,
+        steps: [
+          buildStep("market_data", "fail", message, { timeframe }),
+        ],
+      }), "market_data", message);
+      continue;
+    }
 
-      summary.scannedTargets += 1;
-      scannedSymbolSet.add(scanSymbol);
-      const runtimeContext = buildMarketRuntimeContext(
-        scanSymbol,
-        scanTicker,
-        marketBundle.funding,
-        marketBundle.orderBook,
-        Array.isArray(marketBundle.ohlcv) ? marketBundle.ohlcv : [],
-        {
-          ...baseMarketAnalysis,
-          correlations: baseMarketAnalysis.correlations.map(item => ({ ...item })),
-          trends: baseMarketAnalysis.trends.map(item => ({ ...item })),
+    const staleReason = checkMarketDataFreshness(marketBundle, timeframe);
+    if (staleReason) {
+      const message = `${scanSymbol} ${timeframe}: ${staleReason}`;
+      pushAutoTradingLog(message);
+      finalizeTrace(createTraceDraft({
+        symbol: scanSymbol,
+        timeframe,
+        strategyId: "*",
+        signal: "UNKNOWN",
+        confidence: 0,
+        requiredConfidence: 0,
+        steps: [
+          buildStep("market_data", "fail", message, { timeframe }),
+        ],
+      }), "market_data", message);
+      continue;
+    }
+
+    summary.scannedTargets += 1;
+    scannedSymbolSet.add(scanSymbol);
+    const runtimeContext = buildMarketRuntimeContext(
+      scanSymbol,
+      scanTicker,
+      marketBundle.funding,
+      marketBundle.orderBook,
+      Array.isArray(marketBundle.ohlcv) ? marketBundle.ohlcv : [],
+      {
+        ...baseMarketAnalysis,
+        correlations: baseMarketAnalysis.correlations.map(item => ({ ...item })),
+        trends: baseMarketAnalysis.trends.map(item => ({ ...item })),
+      },
+      timeframe
+    );
+
+    for (const strategyId of config.strategyIds) {
+      summary.strategiesEvaluated += 1;
+      const analysis = evaluateStrategy({
+        symbol: scanSymbol,
+        ticker: scanTicker,
+        strategyId,
+        prices: runtimeContext.prices,
+        indicators: runtimeContext.marketAnalysis.realIndicators,
+        market: {
+          sentiment: runtimeContext.marketAnalysis.sentiment,
+          volatility: runtimeContext.marketAnalysis.volatility,
+          fundingRate: runtimeContext.fundingRate?.fundingRate ?? 0,
+          macroRiskScore,
+          macroGate,
+          onChainData: runtimeContext.marketAnalysis.onChainData,
         },
-        timeframe
-      );
+        risk: {
+          estimatedFeeRate: config.riskConfigSnapshot.estimatedFeeRate,
+          stopLoss: config.riskConfigSnapshot.stopLoss,
+          takeProfit: config.riskConfigSnapshot.takeProfit,
+        },
+        allowSyntheticData: false,
+      });
 
-      for (const strategyId of config.strategyIds) {
-        summary.strategiesEvaluated += 1;
-        const analysis = evaluateStrategy({
-          symbol: scanSymbol,
-          ticker: scanTicker,
-          strategyId,
-          prices: runtimeContext.prices,
-          indicators: runtimeContext.marketAnalysis.realIndicators,
-          market: {
-            sentiment: runtimeContext.marketAnalysis.sentiment,
-            volatility: runtimeContext.marketAnalysis.volatility,
+      // Universe pairs only record actionable signals; logging every HOLD for
+      // 100+ pairs each cycle would grow the database by tens of thousands of rows a day.
+      const isActionable = analysis.signal === "BUY" || analysis.signal === "SELL";
+      if (targetSource === "profile" || isActionable) recordStrategySignal({
+        strategyId,
+        symbol: scanSymbol,
+        signal: analysis.signal,
+        confidence: analysis.confidence,
+        reasoning: analysis.reasoning,
+        price: scanTicker.last,
+        tpPrice: analysis.tp_price,
+        slPrice: analysis.sl_price,
+        regime: analysis.regime,
+        regimeScore: analysis.regimeScore,
+        macroGate: analysis.macroGate || macroGate,
+        macroScore: analysis.macroGate?.score ?? macroRiskScore,
+        mode: toModeLabel(config.sandbox),
+        source: trigger === "manual" ? "manual-auto-scan" : "engine-auto-scan",
+        raw: {
+          ...analysis,
+          timeframe,
+        },
+      });
+
+      const requiredConfidence = config.riskConfigSnapshot.autoTradeThreshold + (analysis?.macroGate?.entryThresholdAdjustment || 0);
+      const trace = createTraceDraft({
+        symbol: scanSymbol,
+        timeframe,
+        strategyId,
+        signal: analysis.signal,
+        confidence: Number(analysis.confidence || 0),
+        requiredConfidence,
+        macroGate: analysis?.macroGate?.state || macroGate.state,
+        steps: [
+          buildStep("market_data", "pass", "Market data ready", {
+            last: scanTicker.last,
             fundingRate: runtimeContext.fundingRate?.fundingRate ?? 0,
-            macroRiskScore,
-            macroGate,
-            onChainData: runtimeContext.marketAnalysis.onChainData,
-          },
-          risk: {
-            estimatedFeeRate: config.riskConfigSnapshot.estimatedFeeRate,
-            stopLoss: config.riskConfigSnapshot.stopLoss,
-            takeProfit: config.riskConfigSnapshot.takeProfit,
-          },
-          allowSyntheticData: false,
-        });
-
-        recordStrategySignal({
-          strategyId,
-          symbol: scanSymbol,
-          signal: analysis.signal,
-          confidence: analysis.confidence,
-          reasoning: analysis.reasoning,
-          price: scanTicker.last,
-          tpPrice: analysis.tp_price,
-          slPrice: analysis.sl_price,
-          regime: analysis.regime,
-          regimeScore: analysis.regimeScore,
-          macroGate: analysis.macroGate || macroGate,
-          macroScore: analysis.macroGate?.score ?? macroRiskScore,
-          mode: toModeLabel(config.sandbox),
-          source: trigger === "manual" ? "manual-auto-scan" : "engine-auto-scan",
-          raw: {
-            ...analysis,
+            hasOrderBook: Boolean(marketBundle.orderBook),
             timeframe,
-          },
-        });
+          }),
+        ],
+      });
 
-        const requiredConfidence = config.riskConfigSnapshot.autoTradeThreshold + (analysis?.macroGate?.entryThresholdAdjustment || 0);
-        const trace = createTraceDraft({
-          symbol: scanSymbol,
-          timeframe,
-          strategyId,
-          signal: analysis.signal,
-          confidence: Number(analysis.confidence || 0),
-          requiredConfidence,
-          macroGate: analysis?.macroGate?.state || macroGate.state,
-          steps: [
-            buildStep("market_data", "pass", "Market data ready", {
-              last: scanTicker.last,
-              fundingRate: runtimeContext.fundingRate?.fundingRate ?? 0,
-              hasOrderBook: Boolean(marketBundle.orderBook),
-              timeframe,
-            }),
-          ],
-        });
-
-        if (analysis.signal !== "BUY" && analysis.signal !== "SELL") {
-          const reason = `Signal rejected: ${analysis.signal}`;
-          trace.steps.push(buildStep("strategy_signal", "fail", reason, {
-            signal: analysis.signal,
-            confidence: analysis.confidence,
-            timeframe,
-          }));
-          finalizeTrace(trace, "strategy_signal", reason);
-          continue;
-        }
-
-        trace.steps.push(buildStep("strategy_signal", "pass", `Actionable signal: ${analysis.signal}`, {
+      if (analysis.signal !== "BUY" && analysis.signal !== "SELL") {
+        // A HOLD on a universe pair is the common case; tracing each one would push
+        // useful traces out of the fixed-size buffer within a couple of cycles.
+        if (targetSource === "universe") continue;
+        const reason = `Signal rejected: ${analysis.signal}`;
+        trace.steps.push(buildStep("strategy_signal", "fail", reason, {
           signal: analysis.signal,
           confidence: analysis.confidence,
           timeframe,
         }));
-
-        if (analysis.confidence < requiredConfidence) {
-          const reason = `Confidence ${analysis.confidence} < ${requiredConfidence}`;
-          trace.steps.push(buildStep("confidence_gate", "fail", reason, {
-            confidence: analysis.confidence,
-            requiredConfidence,
-            threshold: config.riskConfigSnapshot.autoTradeThreshold,
-            entryThresholdAdjustment: analysis?.macroGate?.entryThresholdAdjustment || 0,
-            timeframe,
-          }));
-          finalizeTrace(trace, "confidence_gate", reason);
-          continue;
-        }
-
-        trace.steps.push(buildStep("confidence_gate", "pass", "Confidence gate passed", {
-          confidence: analysis.confidence,
-          requiredConfidence,
-          timeframe,
-        }));
-        trace.steps.push(buildStep("macro_gate", "pass", `Macro gate ${analysis?.macroGate?.state || macroGate.state}`, {
-          state: analysis?.macroGate?.state || macroGate.state,
-          score: analysis?.macroGate?.score ?? macroRiskScore,
-          positionSizeMultiplier: analysis?.macroGate?.positionSizeMultiplier ?? macroGate.positionSizeMultiplier,
-          timeframe,
-        }));
-
-        const sizeMultiplier = analysis.macroGate?.positionSizeMultiplier ?? macroGate.positionSizeMultiplier;
-        candidates.push({
-          symbol: scanSymbol,
-          timeframe,
-          strategyId,
-          ticker: scanTicker,
-          orderBook: marketBundle.orderBook,
-          analysis,
-          requiredConfidence,
-          sizeMultiplier,
-          trace,
-        });
-        pushAutoTradingLog(`Candidate ${strategyId} ${scanSymbol} ${timeframe} ${analysis.signal} (${analysis.confidence}% / ${requiredConfidence}%)`);
+        finalizeTrace(trace, "strategy_signal", reason);
+        continue;
       }
+
+      trace.steps.push(buildStep("strategy_signal", "pass", `Actionable signal: ${analysis.signal}`, {
+        signal: analysis.signal,
+        confidence: analysis.confidence,
+        timeframe,
+      }));
+
+      if (analysis.confidence < requiredConfidence) {
+        const reason = `Confidence ${analysis.confidence} < ${requiredConfidence}`;
+        trace.steps.push(buildStep("confidence_gate", "fail", reason, {
+          confidence: analysis.confidence,
+          requiredConfidence,
+          threshold: config.riskConfigSnapshot.autoTradeThreshold,
+          entryThresholdAdjustment: analysis?.macroGate?.entryThresholdAdjustment || 0,
+          timeframe,
+        }));
+        finalizeTrace(trace, "confidence_gate", reason);
+        continue;
+      }
+
+      trace.steps.push(buildStep("confidence_gate", "pass", "Confidence gate passed", {
+        confidence: analysis.confidence,
+        requiredConfidence,
+        timeframe,
+      }));
+      trace.steps.push(buildStep("macro_gate", "pass", `Macro gate ${analysis?.macroGate?.state || macroGate.state}`, {
+        state: analysis?.macroGate?.state || macroGate.state,
+        score: analysis?.macroGate?.score ?? macroRiskScore,
+        positionSizeMultiplier: analysis?.macroGate?.positionSizeMultiplier ?? macroGate.positionSizeMultiplier,
+        timeframe,
+      }));
+
+      const sizeMultiplier = analysis.macroGate?.positionSizeMultiplier ?? macroGate.positionSizeMultiplier;
+      candidates.push({
+        symbol: scanSymbol,
+        timeframe,
+        strategyId,
+        ticker: scanTicker,
+        orderBook: marketBundle.orderBook,
+        analysis,
+        requiredConfidence,
+        sizeMultiplier,
+        trace,
+      });
+      pushAutoTradingLog(`Candidate ${strategyId} ${scanSymbol} ${timeframe} ${analysis.signal} (${analysis.confidence}% / ${requiredConfidence}%)`);
     }
   }
   summary.scannedSymbols = scannedSymbolSet.size;
+  try {
+    pruneStrategySignals();
+  } catch (error: any) {
+    console.warn("[AutoTrading] Strategy signal pruning failed:", error?.message || error);
+  }
 
   summary.candidates = candidates.length;
   if (candidates.length === 0) {

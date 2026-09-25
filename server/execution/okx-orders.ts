@@ -3,7 +3,7 @@ import { normalizeDisplaySymbol } from "../../src/lib/tradingRuntime";
 import { STRATEGY_VERSION, addToAudit, auditStore } from "../stores/audit-store";
 import { addOrderLifecycle, pushAutoTradingLog } from "../stores/app-store";
 import { buildOkxAttachAlgoOrds, fetchOkxTradeOrderRaw, formatToStepString, getPrivateExchange, normalizeOkxRawOrder, parseOkxErrorDetails, resolveOkxSwapMarket, retry, unwrapOkxApiRow } from "../exchange/okx";
-import { fetchPublicTickerSnapshot } from "../market/public-data";
+import { fetchOkxExecutionTickerSnapshot } from "../market/public-data";
 import { firstNumber, floorToStep } from "../utils";
 import { prepareExchange, runWithExchangeProxyFallback } from "../exchange/connectivity";
 import { recordTrade } from "../persistence/trading-db";
@@ -161,7 +161,8 @@ export async function submitOkxOrder(orderRequest: any, operator = "unknown") {
     }
 
     if (amountType === "usdt") {
-      const ticker = await fetchPublicTickerSnapshot(displaySymbol);
+      // Size with the execution venue's price, not the market data venue's.
+      const ticker = await fetchOkxExecutionTickerSnapshot(displaySymbol);
       const livePrice = ticker.last || 0;
       if (livePrice === 0) throw requestError(500, "Could not fetch current price for amount calculation", {
         error: "Could not fetch current price for amount calculation",
